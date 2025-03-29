@@ -18,7 +18,6 @@ export class InterferencePattern {
   private height: number;
   private points: Point[];
   private time: number;
-  private baseFrequency = 0.15;
   private wavelength = (2 * Math.PI) / 0.15;
   private decayRate: number;
   private threshold: number;
@@ -48,7 +47,7 @@ export class InterferencePattern {
     // Calculate square dimensions
     const margin = width * 0.2;
     const squareSize = width - 2 * margin;
-    const squareTop = (height - squareSize) / 2;
+    const squareTop = (height - squareSize) / 2 - 100;
 
     // Initialize 4 points in a roughly square pattern
     const basePositions = [

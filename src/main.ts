@@ -7,18 +7,12 @@ const HEIGHT = 900;
 
 // Default parameters
 const baseFrequency = 0.15;
-const defaultParams = Array(4).fill({
-  frequency: baseFrequency,
-  xOffset: 0,
-  yOffset: 0,
-});
 
 // Point names for labels
 const pointNames = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"];
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
-    <h1>Interference Pattern Generator</h1>
     <div class="layout">
       <div class="controls">
         <div class="global-controls">
