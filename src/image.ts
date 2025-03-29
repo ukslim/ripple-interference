@@ -2,7 +2,13 @@ interface Point {
   x: number;
   y: number;
   phase: number;
-  frequency: number; // Each point now has its own frequency
+  frequency: number;
+}
+
+interface PointParameters {
+  frequency: number;
+  xOffset: number; // Offset from square corner in wavelengths
+  yOffset: number; // Offset from square corner in wavelengths
 }
 
 export class InterferencePattern {
@@ -12,10 +18,19 @@ export class InterferencePattern {
   private height: number;
   private points: Point[];
   private time: number;
-  private baseFrequency = 0.15; // Base frequency for all points
-  private wavelength = (2 * Math.PI) / 0.15; // Wavelength based on base frequency
+  private baseFrequency = 0.15;
+  private wavelength = (2 * Math.PI) / 0.15;
 
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    pointParams: [
+      PointParameters,
+      PointParameters,
+      PointParameters,
+      PointParameters
+    ]
+  ) {
     this.width = width;
     this.height = height;
     this.canvas = document.createElement("canvas");
@@ -29,61 +44,20 @@ export class InterferencePattern {
     const squareSize = width - 2 * margin;
     const squareTop = (height - squareSize) / 2;
 
-    // Helper function to add controlled randomness
-    const randomizePosition = (basePos: number) => {
-      // Random offset within one wavelength
-      return basePos + (Math.random() - 0.5) * this.wavelength;
-    };
-
-    // Helper function to generate random frequency variation
-    const randomizeFrequency = () => {
-      // Random frequency within ±50% of base frequency
-      return this.baseFrequency * (1 + (Math.random() - 0.5));
-    };
-
     // Initialize 4 points in a roughly square pattern
-    this.points = [
-      {
-        // Top Left
-        x: randomizePosition(margin),
-        y: randomizePosition(squareTop),
-        phase: 0,
-        frequency: randomizeFrequency(),
-      },
-      {
-        // Top Right
-        x: randomizePosition(width - margin),
-        y: randomizePosition(squareTop),
-        phase: Math.PI / 2,
-        frequency: randomizeFrequency(),
-      },
-      {
-        // Bottom Left
-        x: randomizePosition(margin),
-        y: randomizePosition(squareTop + squareSize),
-        phase: Math.PI,
-        frequency: randomizeFrequency(),
-      },
-      {
-        // Bottom Right
-        x: randomizePosition(width - margin),
-        y: randomizePosition(squareTop + squareSize),
-        phase: (3 * Math.PI) / 2,
-        frequency: randomizeFrequency(),
-      },
+    const basePositions = [
+      { x: margin, y: squareTop }, // Top Left
+      { x: width - margin, y: squareTop }, // Top Right
+      { x: margin, y: squareTop + squareSize }, // Bottom Left
+      { x: width - margin, y: squareTop + squareSize }, // Bottom Right
     ];
 
-    // Log the variations for debugging
-    console.log(
-      "Point variations:",
-      this.points.map((p) => ({
-        frequency: (p.frequency / this.baseFrequency - 1) * 100 + "%",
-        positionOffset: {
-          x: p.x % this.wavelength,
-          y: p.y % this.wavelength,
-        },
-      }))
-    );
+    this.points = pointParams.map((params, i) => ({
+      x: basePositions[i].x + params.xOffset * this.wavelength,
+      y: basePositions[i].y + params.yOffset * this.wavelength,
+      phase: (i * Math.PI) / 2, // 0, π/2, π, 3π/2
+      frequency: params.frequency,
+    }));
   }
 
   private calculateIntensity(x: number, y: number): number {
@@ -141,9 +115,15 @@ export class InterferencePattern {
 export function generateInterferencePattern(
   width: number,
   height: number,
-  targetCanvas: HTMLCanvasElement
+  targetCanvas: HTMLCanvasElement,
+  pointParams: [
+    PointParameters,
+    PointParameters,
+    PointParameters,
+    PointParameters
+  ]
 ): void {
-  const pattern = new InterferencePattern(width, height);
+  const pattern = new InterferencePattern(width, height, pointParams);
   const imageData = pattern.generate();
   const ctx = targetCanvas.getContext("2d")!;
   ctx.putImageData(imageData, 0, 0);
