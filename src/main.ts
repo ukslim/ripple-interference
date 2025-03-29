@@ -27,9 +27,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="point-controls">
             <h3>${name}</h3>
             <div class="slider-group">
-              <label>Frequency (${(baseFrequency * 0.5).toFixed(3)} - ${(
-              baseFrequency * 1.5
-            ).toFixed(3)})</label>
+              <label>Freq</label>
               <input type="range" 
                      id="freq-${i}" 
                      min="${baseFrequency * 0.5}" 
@@ -38,7 +36,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                      value="${baseFrequency}">
             </div>
             <div class="slider-group">
-              <label>X Offset (-0.5 to 0.5 wavelengths)</label>
+              <label>X</label>
               <input type="range" 
                      id="x-${i}" 
                      min="-0.5" 
@@ -47,7 +45,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                      value="0">
             </div>
             <div class="slider-group">
-              <label>Y Offset (-0.5 to 0.5 wavelengths)</label>
+              <label>Y</label>
               <input type="range" 
                      id="y-${i}" 
                      min="-0.5" 
