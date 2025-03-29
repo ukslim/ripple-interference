@@ -13,6 +13,10 @@ const pointNames = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"];
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
+    <h1>Interference Pattern Generator</h1>
+    <nav style="margin-bottom: 1rem;">
+      <a href="/animate.html">View Animated Version</a>
+    </nav>
     <div class="layout">
       <div class="controls">
         <div class="global-controls">
