@@ -59,8 +59,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <label>X</label>
               <input type="range" 
                      id="x-${i}" 
-                     min="-0.5" 
-                     max="0.5" 
+                     min="-1" 
+                     max="1" 
                      step="0.01" 
                      value="0">
             </div>
@@ -68,8 +68,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <label>Y</label>
               <input type="range" 
                      id="y-${i}" 
-                     min="-0.5" 
-                     max="0.5" 
+                     min="-1" 
+                     max="1" 
                      step="0.01" 
                      value="0">
             </div>
