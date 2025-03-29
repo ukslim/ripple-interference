@@ -21,6 +21,26 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <h1>Interference Pattern Generator</h1>
     <div class="layout">
       <div class="controls">
+        <div class="global-controls">
+          <div class="slider-group">
+            <label>Decay</label>
+            <input type="range" 
+                   id="decay" 
+                   min="0" 
+                   max="0.01" 
+                   step="0.0001" 
+                   value="0.001">
+          </div>
+          <div class="slider-group">
+            <label>Thresh</label>
+            <input type="range" 
+                   id="threshold" 
+                   min="0" 
+                   max="1" 
+                   step="0.01" 
+                   value="0.5">
+          </div>
+        </div>
         ${pointNames
           .map(
             (name, i) => `
@@ -75,6 +95,9 @@ const sliders = Array(4)
     yOffset: document.querySelector<HTMLInputElement>(`#y-${i}`)!,
   }));
 
+const decaySlider = document.querySelector<HTMLInputElement>("#decay")!;
+const thresholdSlider = document.querySelector<HTMLInputElement>("#threshold")!;
+
 function getPointParams() {
   return sliders.map((slider) => ({
     frequency: parseFloat(slider.frequency.value),
@@ -89,7 +112,9 @@ function displayPattern() {
     WIDTH,
     HEIGHT,
     canvas,
-    getPointParams() as [any, any, any, any]
+    getPointParams() as [any, any, any, any],
+    parseFloat(decaySlider.value),
+    parseFloat(thresholdSlider.value)
   );
 }
 
@@ -99,6 +124,9 @@ sliders.forEach((slider) => {
     input.addEventListener("input", displayPattern);
   });
 });
+
+decaySlider.addEventListener("input", displayPattern);
+thresholdSlider.addEventListener("input", displayPattern);
 
 // Randomize button handler
 document

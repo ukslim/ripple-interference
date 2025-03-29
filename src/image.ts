@@ -20,6 +20,8 @@ export class InterferencePattern {
   private time: number;
   private baseFrequency = 0.15;
   private wavelength = (2 * Math.PI) / 0.15;
+  private decayRate: number;
+  private threshold: number;
 
   constructor(
     width: number,
@@ -29,7 +31,9 @@ export class InterferencePattern {
       PointParameters,
       PointParameters,
       PointParameters
-    ]
+    ],
+    decayRate: number = 0.001,
+    threshold: number = 0.5
   ) {
     this.width = width;
     this.height = height;
@@ -38,6 +42,8 @@ export class InterferencePattern {
     this.canvas.height = height;
     this.ctx = this.canvas.getContext("2d")!;
     this.time = 0;
+    this.decayRate = decayRate;
+    this.threshold = threshold;
 
     // Calculate square dimensions
     const margin = width * 0.2;
@@ -68,12 +74,16 @@ export class InterferencePattern {
       const dy = y - point.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
+      // Apply exponential decay based on distance
+      const amplitude = Math.exp(-distance * this.decayRate);
+
       // Use point-specific frequency with small modulation
       const frequency = point.frequency + Math.sin(distance * 0.002) * 0.01;
-      const wave = Math.sin(distance * frequency + point.phase + this.time);
+      const wave =
+        Math.sin(distance * frequency + point.phase + this.time) * amplitude;
 
       // Reduce noise and make it higher frequency
-      const noise = Math.sin(x * 0.2 + y * 0.2) * 0.05;
+      const noise = Math.sin(x * 0.2 + y * 0.2) * 0.05 * amplitude;
 
       value += wave + noise;
     }
@@ -84,7 +94,17 @@ export class InterferencePattern {
     // Apply contrast enhancement
     value = Math.pow(value, 1.5);
     value = value < 0.5 ? value * 0.8 : value * 1.2;
-    return Math.max(0, Math.min(1, value));
+
+    // Apply threshold cutoff
+    return value > this.threshold ? 1 : 0;
+  }
+
+  public setDecayRate(rate: number) {
+    this.decayRate = rate;
+  }
+
+  public setThreshold(threshold: number) {
+    this.threshold = threshold;
   }
 
   public generate(): ImageData {
@@ -121,9 +141,17 @@ export function generateInterferencePattern(
     PointParameters,
     PointParameters,
     PointParameters
-  ]
+  ],
+  decayRate: number = 0.001,
+  threshold: number = 0.5
 ): void {
-  const pattern = new InterferencePattern(width, height, pointParams);
+  const pattern = new InterferencePattern(
+    width,
+    height,
+    pointParams,
+    decayRate,
+    threshold
+  );
   const imageData = pattern.generate();
   const ctx = targetCanvas.getContext("2d")!;
   ctx.putImageData(imageData, 0, 0);
