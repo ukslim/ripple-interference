@@ -14,11 +14,26 @@ interface PointParameters {
 export class InterferencePattern {
   private width: number;
   private height: number;
-  private wavelength = (2 * Math.PI) / 0.15;
+  private wavelength: number;
+  private basePositions: { x: number; y: number }[];
 
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
+    this.wavelength = (2 * Math.PI) / 0.15;
+
+    // Calculate square dimensions
+    const margin = width * 0.2;
+    const squareSize = width - 2 * margin;
+    const squareTop = (height - squareSize) / 2 - height / 9;
+
+    // Initialize 4 points in a roughly square pattern
+    this.basePositions = [
+      { x: margin, y: squareTop }, // Top Left
+      { x: width - margin, y: squareTop }, // Top Right
+      { x: margin, y: squareTop + squareSize }, // Bottom Left
+      { x: width - margin, y: squareTop + squareSize }, // Bottom Right
+    ];
   }
 
   private calculateIntensity(
@@ -81,22 +96,9 @@ export class InterferencePattern {
       );
     }
 
-    // Calculate square dimensions
-    const margin = this.width * 0.2;
-    const squareSize = this.width - 2 * margin;
-    const squareTop = (this.height - squareSize) / 2 - this.height / 9;
-
-    // Initialize 4 points in a roughly square pattern
-    const basePositions = [
-      { x: margin, y: squareTop }, // Top Left
-      { x: this.width - margin, y: squareTop }, // Top Right
-      { x: margin, y: squareTop + squareSize }, // Bottom Left
-      { x: this.width - margin, y: squareTop + squareSize }, // Bottom Right
-    ];
-
     const points = pointParams.map((params, i) => ({
-      x: basePositions[i].x + params.xOffset * this.wavelength,
-      y: basePositions[i].y + params.yOffset * this.wavelength,
+      x: this.basePositions[i].x + params.xOffset * this.wavelength,
+      y: this.basePositions[i].y + params.yOffset * this.wavelength,
       phase: (i * Math.PI) / 2, // 0, π/2, π, 3π/2
       frequency: params.frequency,
     }));
