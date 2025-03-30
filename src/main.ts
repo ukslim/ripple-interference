@@ -25,7 +25,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
             <input type="range" 
                    id="decay" 
                    min="0" 
-                   max="0.01" 
+                   max="0.05" 
                    step="0.0001" 
                    value="0.001">
           </div>
@@ -38,6 +38,24 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                    step="0.01" 
                    value="0.5">
           </div>
+          <div class="slider-group">
+            <label>Noise Freq</label>
+            <input type="range" 
+                   id="noiseFreq" 
+                   min="0.001" 
+                   max="2" 
+                   step="0.001" 
+                   value="0.2">
+          </div>
+          <div class="slider-group">
+            <label>Noise Amp</label>
+            <input type="range" 
+                   id="noiseAmp" 
+                   min="0" 
+                   max="0.2" 
+                   step="0.001" 
+                   value="0.05">
+          </div>
         </div>
         ${pointNames
           .map(
@@ -48,8 +66,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <label>Freq</label>
               <input type="range" 
                      id="freq-${i}" 
-                     min="${baseFrequency * 0.5}" 
-                     max="${baseFrequency * 1.5}" 
+                     min="${baseFrequency * 0.1}" 
+                     max="${baseFrequency * 5.0}" 
                      step="0.001" 
                      value="${baseFrequency}">
             </div>
@@ -57,8 +75,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <label>X</label>
               <input type="range" 
                      id="x-${i}" 
-                     min="-1" 
-                     max="1" 
+                     min="-3" 
+                     max="3" 
                      step="0.01" 
                      value="0">
             </div>
@@ -66,8 +84,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
               <label>Y</label>
               <input type="range" 
                      id="y-${i}" 
-                     min="-1" 
-                     max="1" 
+                     min="-3" 
+                     max="3" 
                      step="0.01" 
                      value="0">
             </div>
@@ -95,6 +113,8 @@ const sliders = Array(4)
 
 const decaySlider = document.querySelector<HTMLInputElement>("#decay")!;
 const thresholdSlider = document.querySelector<HTMLInputElement>("#threshold")!;
+const noiseFreqSlider = document.querySelector<HTMLInputElement>("#noiseFreq")!;
+const noiseAmpSlider = document.querySelector<HTMLInputElement>("#noiseAmp")!;
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
@@ -112,7 +132,10 @@ function displayPattern() {
   pattern.generate(
     getPointParams() as [any, any, any, any],
     parseFloat(decaySlider.value),
-    parseFloat(thresholdSlider.value)
+    parseFloat(thresholdSlider.value),
+    0,
+    parseFloat(noiseFreqSlider.value),
+    parseFloat(noiseAmpSlider.value)
   );
 }
 
@@ -125,6 +148,8 @@ sliders.forEach((slider) => {
 
 decaySlider.addEventListener("input", displayPattern);
 thresholdSlider.addEventListener("input", displayPattern);
+noiseFreqSlider.addEventListener("input", displayPattern);
+noiseAmpSlider.addEventListener("input", displayPattern);
 
 // Randomize button handler
 document

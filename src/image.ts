@@ -30,6 +30,8 @@ export class InterferencePattern {
     uniform float decayRate;
     uniform float threshold;
     uniform float time;
+    uniform float noiseFrequency;
+    uniform float noiseAmplitude;
 
     // Optimized distance calculation
     float fastDistance(vec2 a, vec2 b) {
@@ -43,8 +45,8 @@ export class InterferencePattern {
       float value = 0.0;
 
       // Pre-calculate common values
-      vec2 noiseCoord = pos * 0.2;
-      float noiseBase = sin(noiseCoord.x + noiseCoord.y) * 0.05;
+      vec2 noiseCoord = pos * noiseFrequency;
+      float noiseBase = sin(noiseCoord.x + noiseCoord.y) * noiseAmplitude;
 
       // Process all points in a single loop
       for (int i = 0; i < 4; i++) {
@@ -147,6 +149,16 @@ export class InterferencePattern {
     );
     this.gl.useProgram(this.program);
     this.gl.uniform2f(resolutionLocation, this.width, this.height);
+
+    // Set initial noise parameters
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "noiseFrequency")!,
+      0.2
+    );
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "noiseAmplitude")!,
+      0.05
+    );
   }
 
   private createShader(type: number, source: string): WebGLShader {
@@ -172,7 +184,9 @@ export class InterferencePattern {
     ],
     decayRate: number = 0.001,
     threshold: number = 0.5,
-    time: number = 0
+    time: number = 0,
+    noiseFrequency: number = 0.2,
+    noiseAmplitude: number = 0.05
   ): void {
     // Update points uniforms
     const pointsLocation = this.gl.getUniformLocation(this.program, "points");
@@ -194,6 +208,14 @@ export class InterferencePattern {
       threshold
     );
     this.gl.uniform1f(this.gl.getUniformLocation(this.program, "time")!, time);
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "noiseFrequency")!,
+      noiseFrequency
+    );
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "noiseAmplitude")!,
+      noiseAmplitude
+    );
 
     // Render
     this.gl.viewport(0, 0, this.width, this.height);
