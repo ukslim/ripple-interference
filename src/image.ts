@@ -48,7 +48,7 @@ export class InterferencePattern {
     // Calculate square dimensions
     const margin = width * 0.2;
     const squareSize = width - 2 * margin;
-    const squareTop = (height - squareSize) / 2 - 100;
+    const squareTop = (height - squareSize) / 2 - height / 9;
 
     // Initialize 4 points in a roughly square pattern
     const basePositions = [
