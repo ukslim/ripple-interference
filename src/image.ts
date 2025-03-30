@@ -1,7 +1,7 @@
 import { PhysicalDimensions } from "./dimensions";
 
 interface PointParameters {
-  frequency: number;
+  wavelength: number; // Wavelength in mm
   xOffset: number; // Offset from square corner in wavelengths
   yOffset: number; // Offset from square corner in wavelengths
 }
@@ -27,7 +27,7 @@ export class InterferencePattern {
     out vec4 fragColor;
     
     uniform vec2 resolution;
-    uniform vec4 points[4];  // x, y, phase, frequency
+    uniform vec4 points[4];  // x, y, phase, wavelength
     uniform float decayRate;
     uniform float threshold;
     uniform float time;
@@ -53,7 +53,8 @@ export class InterferencePattern {
       for (int i = 0; i < 4; i++) {
         vec2 pointPos = points[i].xy;
         float phase = points[i].z;
-        float frequency = points[i].w;
+        float wavelength = points[i].w;
+        float frequency = 6.28318530718 / wavelength; // Convert wavelength to frequency (2π/λ)
         
         float distSq = fastDistance(pos, pointPos);
         float dist = sqrt(distSq);
@@ -214,7 +215,7 @@ export class InterferencePattern {
         physicalPos.y + params.yOffset * this.wavelength
       );
       const phase = (i * Math.PI) / 2;
-      return [bufferPos.x, bufferPos.y, phase, params.frequency];
+      return [bufferPos.x, bufferPos.y, phase, params.wavelength];
     });
     this.gl.uniform4fv(pointsLocation, points.flat());
 

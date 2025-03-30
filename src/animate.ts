@@ -6,11 +6,11 @@ const WIDTH_MM = 110;
 const HEIGHT_MM = 178;
 
 // Default parameters
-const baseFrequency = 0.15;
+const baseWavelength = 41.89; // 2π/0.15, converting from previous baseFrequency
 
 // Animation parameters
 const animationSpeeds = {
-  frequency: 0.05,
+  wavelength: 0.05,
   xOffset: 0.02,
   yOffset: 0.02,
   decay: 0.02,
@@ -18,7 +18,7 @@ const animationSpeeds = {
 
 // Initial phase offsets for each parameter
 const phaseOffsets = {
-  frequency: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2],
+  wavelength: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2],
   xOffset: [0, Math.PI / 3, (2 * Math.PI) / 3, Math.PI],
   yOffset: [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4],
   decay: 0,
@@ -26,7 +26,7 @@ const phaseOffsets = {
 
 // Parameter ranges
 const ranges = {
-  frequency: { min: baseFrequency * 0.2, max: baseFrequency * 3.0 },
+  wavelength: { min: baseWavelength / 1.5, max: baseWavelength * 3.0 },
   xOffset: { min: -1, max: 1 }, // Reduced range for physical size
   yOffset: { min: -1, max: 1 }, // Reduced range for physical size
   decay: { min: 0.0001, max: 0.005 },
@@ -41,14 +41,14 @@ function getAnimatedParams() {
   return Array(4)
     .fill(null)
     .map((_, i) => ({
-      frequency:
-        ranges.frequency.min +
+      wavelength:
+        ranges.wavelength.min +
         ((Math.sin(
-          time * animationSpeeds.frequency + phaseOffsets.frequency[i]
+          time * animationSpeeds.wavelength + phaseOffsets.wavelength[i]
         ) +
           1) /
           2) *
-          (ranges.frequency.max - ranges.frequency.min),
+          (ranges.wavelength.max - ranges.wavelength.min),
       xOffset:
         ranges.xOffset.min +
         ((Math.sin(time * animationSpeeds.xOffset + phaseOffsets.xOffset[i]) +
