@@ -23,14 +23,14 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="slider-group">
             <div class="slider-label">
               <span>Decay</span>
-              <span class="value-display" id="decay-value">0.001</span>
+              <span class="value-display" id="decay-value">0.00026</span>
             </div>
             <input type="range" 
                    id="decay" 
                    min="0" 
-                   max="0.05" 
-                   step="0.0001" 
-                   value="0.001">
+                   max="0.013" 
+                   step="0.000026" 
+                   value="0.00026">
           </div>
           <div class="slider-group">
             <div class="slider-label">

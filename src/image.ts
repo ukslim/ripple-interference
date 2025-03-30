@@ -34,6 +34,11 @@ export class InterferencePattern {
     uniform float noiseFrequency;
     uniform float noiseAmplitude;
 
+    // Convert pixel distance to millimeters (96 DPI = 96/25.4 pixels per mm)
+    float pixelToMm(float pixelDist) {
+      return pixelDist * (25.4 / 96.0);
+    }
+
     // Optimized distance calculation
     float fastDistance(vec2 a, vec2 b) {
       vec2 diff = a - b;
@@ -58,8 +63,9 @@ export class InterferencePattern {
         
         float distSq = fastDistance(pos, pointPos);
         float dist = sqrt(distSq);
+        float distMm = pixelToMm(dist);
         
-        float amplitude = exp(-dist * decayRate);
+        float amplitude = exp(-distMm * decayRate);
         float modFreq = frequency + sin(dist * 0.002) * 0.01;
         float wave = sin(dist * modFreq + phase + time) * amplitude;
         float noise = noiseBase * amplitude;
