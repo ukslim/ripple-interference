@@ -1,9 +1,9 @@
 import { InterferencePattern } from "./image";
 import "./style.css";
 
-// Paperback book aspect ratio (6:9)
-const WIDTH = 600;
-const HEIGHT = 900;
+// Physical dimensions in millimeters
+const WIDTH_MM = 110;
+const HEIGHT_MM = 178;
 
 // Default parameters
 const baseFrequency = 0.15;
@@ -27,8 +27,8 @@ const phaseOffsets = {
 // Parameter ranges
 const ranges = {
   frequency: { min: baseFrequency * 0.2, max: baseFrequency * 3.0 },
-  xOffset: { min: -3, max: 3 },
-  yOffset: { min: -3, max: 3 },
+  xOffset: { min: -1, max: 1 }, // Reduced range for physical size
+  yOffset: { min: -1, max: 1 }, // Reduced range for physical size
   decay: { min: 0.0001, max: 0.005 },
 };
 
@@ -73,7 +73,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     </nav>
     <div class="layout">
       <div class="canvas-container">
-        <canvas id="display" width="${WIDTH}" height="${HEIGHT}"></canvas>
+        <canvas id="display"></canvas>
       </div>
     </div>
   </div>
@@ -81,7 +81,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const pattern = new InterferencePattern(WIDTH, HEIGHT, canvas);
+const pattern = new InterferencePattern(WIDTH_MM, HEIGHT_MM, canvas);
 
 function animate() {
   const decay =

@@ -1,3 +1,5 @@
+import { PhysicalDimensions } from "./dimensions";
+
 interface PointParameters {
   frequency: number;
   xOffset: number; // Offset from square corner in wavelengths
@@ -5,8 +7,7 @@ interface PointParameters {
 }
 
 export class InterferencePattern {
-  private width: number;
-  private height: number;
+  private dimensions: PhysicalDimensions;
   private wavelength: number;
   private basePositions: { x: number; y: number }[];
   private gl!: WebGL2RenderingContext;
@@ -75,22 +76,23 @@ export class InterferencePattern {
     }
   `;
 
-  constructor(width: number, height: number, canvas: HTMLCanvasElement) {
-    this.width = width;
-    this.height = height;
+  constructor(widthMm: number, heightMm: number, canvas: HTMLCanvasElement) {
+    this.dimensions = new PhysicalDimensions(widthMm, heightMm, canvas);
     this.wavelength = (2 * Math.PI) / 0.15;
 
-    // Calculate square dimensions
-    const margin = width * 0.2;
-    const squareSize = width - 2 * margin;
-    const squareTop = (height - squareSize) / 2 - height / 9;
+    // Calculate square dimensions in physical units
+    const physicalDims = this.dimensions.getPhysicalDimensions();
+    const margin = physicalDims.width * 0.2;
+    const squareSize = physicalDims.width - 2 * margin;
+    const squareTop =
+      (physicalDims.height - squareSize) / 2 - physicalDims.height / 9;
 
     // Initialize 4 points in a roughly square pattern
     this.basePositions = [
       { x: margin, y: squareTop }, // Top Left
-      { x: width - margin, y: squareTop }, // Top Right
+      { x: physicalDims.width - margin, y: squareTop }, // Top Right
       { x: margin, y: squareTop + squareSize }, // Bottom Left
-      { x: width - margin, y: squareTop + squareSize }, // Bottom Right
+      { x: physicalDims.width - margin, y: squareTop + squareSize }, // Bottom Right
     ];
 
     // Initialize WebGL2 with the provided canvas
@@ -98,8 +100,22 @@ export class InterferencePattern {
   }
 
   private initWebGL(canvas: HTMLCanvasElement): void {
-    // Use WebGL2 context
-    this.gl = canvas.getContext("webgl2")!;
+    // Get WebGL2 context with proper options
+    this.gl = canvas.getContext("webgl2", {
+      alpha: false,
+      antialias: true,
+      depth: false,
+      desynchronized: true,
+      failIfMajorPerformanceCaveat: false,
+      powerPreference: "high-performance",
+      preserveDrawingBuffer: false,
+      premultipliedAlpha: false,
+      stencil: false,
+    })!;
+
+    if (!this.gl) {
+      throw new Error("WebGL2 not supported");
+    }
 
     // Create and compile shaders
     const vertexShader = this.createShader(
@@ -148,7 +164,8 @@ export class InterferencePattern {
       "resolution"
     );
     this.gl.useProgram(this.program);
-    this.gl.uniform2f(resolutionLocation, this.width, this.height);
+    const bufferDims = this.dimensions.getBufferDimensions();
+    this.gl.uniform2f(resolutionLocation, bufferDims.width, bufferDims.height);
 
     // Set initial noise parameters
     this.gl.uniform1f(
@@ -191,10 +208,13 @@ export class InterferencePattern {
     // Update points uniforms
     const pointsLocation = this.gl.getUniformLocation(this.program, "points");
     const points = pointParams.map((params, i) => {
-      const x = this.basePositions[i].x + params.xOffset * this.wavelength;
-      const y = this.basePositions[i].y + params.yOffset * this.wavelength;
+      const physicalPos = this.basePositions[i];
+      const bufferPos = this.dimensions.mmToBuffer(
+        physicalPos.x + params.xOffset * this.wavelength,
+        physicalPos.y + params.yOffset * this.wavelength
+      );
       const phase = (i * Math.PI) / 2;
-      return [x, y, phase, params.frequency];
+      return [bufferPos.x, bufferPos.y, phase, params.frequency];
     });
     this.gl.uniform4fv(pointsLocation, points.flat());
 
@@ -218,7 +238,8 @@ export class InterferencePattern {
     );
 
     // Render
-    this.gl.viewport(0, 0, this.width, this.height);
+    const bufferDims = this.dimensions.getBufferDimensions();
+    this.gl.viewport(0, 0, bufferDims.width, bufferDims.height);
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
   }
 }

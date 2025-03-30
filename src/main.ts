@@ -1,9 +1,9 @@
 import { InterferencePattern } from "./image";
 import "./style.css";
 
-// Paperback book aspect ratio (6:9)
-const WIDTH = 600;
-const HEIGHT = 900;
+// Physical dimensions in millimeters
+const WIDTH_MM = 110;
+const HEIGHT_MM = 178;
 
 // Default parameters
 const baseFrequency = 0.15;
@@ -96,7 +96,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <button id="regenerate">Randomize All</button>
       </div>
       <div class="canvas-container">
-        <canvas id="display" width="${WIDTH}" height="${HEIGHT}"></canvas>
+        <canvas id="display"></canvas>
       </div>
     </div>
   </div>
@@ -118,7 +118,7 @@ const noiseAmpSlider = document.querySelector<HTMLInputElement>("#noiseAmp")!;
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const pattern = new InterferencePattern(WIDTH, HEIGHT, canvas);
+const pattern = new InterferencePattern(WIDTH_MM, HEIGHT_MM, canvas);
 
 function getPointParams() {
   return sliders.map((slider) => ({
