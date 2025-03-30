@@ -8,99 +8,75 @@ const HEIGHT = 900;
 // Default parameters
 const baseFrequency = 0.15;
 
-// Animation parameters
-const animationSpeeds = {
-  frequency: 0.4,
-  xOffset: 0.3,
-  yOffset: 0.4,
-  decay: 0.2,
-};
+// Point names for labels
+const pointNames = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"];
 
-// Initial phase offsets for each parameter
-const phaseOffsets = {
-  frequency: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2],
-  xOffset: [0, Math.PI / 3, (2 * Math.PI) / 3, Math.PI],
-  yOffset: [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4],
-  decay: 0,
-};
-
-// Parameter ranges
-const ranges = {
-  frequency: { min: baseFrequency * 0.2, max: baseFrequency * 3.0 },
-  xOffset: { min: -3, max: 3 },
-  yOffset: { min: -3, max: 3 },
-  decay: { min: 0.0001, max: 0.005 },
-};
-
-// Fixed threshold value (middle of original range)
-const fixedThreshold = 0.35;
-
-let time = 0;
-
-function getAnimatedParams() {
-  return Array(4)
-    .fill(null)
-    .map((_, i) => ({
-      frequency:
-        ranges.frequency.min +
-        ((Math.sin(
-          time * animationSpeeds.frequency + phaseOffsets.frequency[i]
-        ) +
-          1) /
-          2) *
-          (ranges.frequency.max - ranges.frequency.min),
-      xOffset:
-        ranges.xOffset.min +
-        ((Math.sin(time * animationSpeeds.xOffset + phaseOffsets.xOffset[i]) +
-          1) /
-          2) *
-          (ranges.xOffset.max - ranges.xOffset.min),
-      yOffset:
-        ranges.yOffset.min +
-        ((Math.sin(time * animationSpeeds.yOffset + phaseOffsets.yOffset[i]) +
-          1) /
-          2) *
-          (ranges.yOffset.max - ranges.yOffset.min),
-    }));
-}
-
-// Create pattern generator once
-const pattern = new InterferencePattern(WIDTH, HEIGHT);
-const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const ctx = canvas.getContext("2d")!;
-const imageData = new ImageData(WIDTH, HEIGHT);
-
-function animate() {
-  const decay =
-    ranges.decay.min +
-    ((Math.sin(time * animationSpeeds.decay + phaseOffsets.decay) + 1) / 2) *
-      (ranges.decay.max - ranges.decay.min);
-
-  // Generate pattern into buffer
-  pattern.generate(
-    imageData.data,
-    getAnimatedParams() as [any, any, any, any],
-    decay,
-    fixedThreshold,
-    time
-  );
-
-  // Clear canvas and draw new pattern
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
-  ctx.putImageData(imageData, 0, 0);
-
-  time += 0.016; // Approximately 60fps
-  requestAnimationFrame(animate);
-}
-
-// Set up the page
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
-    <h1>Animated Interference Pattern</h1>
+    <h1>Interference Pattern Generator</h1>
     <nav style="margin-bottom: 1rem;">
-      <a href="/ripple-interference/">Back to Interactive Version</a>
+      <a href="/ripple-interference/index.html">View Static Version</a>
     </nav>
     <div class="layout">
+      <div class="controls">
+        <div class="global-controls">
+          <div class="slider-group">
+            <label>Decay</label>
+            <input type="range" 
+                   id="decay" 
+                   min="0" 
+                   max="0.01" 
+                   step="0.0001" 
+                   value="0.001">
+          </div>
+          <div class="slider-group">
+            <label>Thresh</label>
+            <input type="range" 
+                   id="threshold" 
+                   min="0" 
+                   max="1" 
+                   step="0.01" 
+                   value="0.5">
+          </div>
+        </div>
+        ${pointNames
+          .map(
+            (name, i) => `
+          <div class="point-controls">
+            <h3>${name}</h3>
+            <div class="slider-group">
+              <label>Freq</label>
+              <input type="range" 
+                     id="freq-${i}" 
+                     min="${baseFrequency * 0.5}" 
+                     max="${baseFrequency * 1.5}" 
+                     step="0.001" 
+                     value="${baseFrequency}">
+            </div>
+            <div class="slider-group">
+              <label>X</label>
+              <input type="range" 
+                     id="x-${i}" 
+                     min="-1" 
+                     max="1" 
+                     step="0.01" 
+                     value="0">
+            </div>
+            <div class="slider-group">
+              <label>Y</label>
+              <input type="range" 
+                     id="y-${i}" 
+                     min="-1" 
+                     max="1" 
+                     step="0.01" 
+                     value="0">
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+        <button id="regenerate">Randomize All</button>
+      </div>
       <div class="canvas-container">
         <canvas id="display" width="${WIDTH}" height="${HEIGHT}"></canvas>
       </div>
@@ -108,15 +84,86 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </div>
 `;
 
-// Wait for the next frame to ensure DOM is updated
-requestAnimationFrame(() => {
-  // Verify canvas exists
-  const canvas = document.querySelector<HTMLCanvasElement>("#display");
-  if (!canvas) {
-    console.error("Canvas not found!");
-    return;
-  }
+// Get all sliders
+const sliders = Array(4)
+  .fill(null)
+  .map((_, i) => ({
+    frequency: document.querySelector<HTMLInputElement>(`#freq-${i}`)!,
+    xOffset: document.querySelector<HTMLInputElement>(`#x-${i}`)!,
+    yOffset: document.querySelector<HTMLInputElement>(`#y-${i}`)!,
+  }));
 
-  // Start animation
-  animate();
+const decaySlider = document.querySelector<HTMLInputElement>("#decay")!;
+const thresholdSlider = document.querySelector<HTMLInputElement>("#threshold")!;
+
+// Create pattern generator with the display canvas
+const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
+const pattern = new InterferencePattern(WIDTH, HEIGHT, canvas);
+
+function getPointParams() {
+  return sliders.map((slider) => ({
+    frequency: parseFloat(slider.frequency.value),
+    xOffset: parseFloat(slider.xOffset.value),
+    yOffset: parseFloat(slider.yOffset.value),
+  }));
+}
+
+function displayPattern() {
+  pattern.generate(
+    getPointParams() as [any, any, any, any],
+    parseFloat(decaySlider.value),
+    parseFloat(thresholdSlider.value)
+  );
+}
+
+// Update pattern when any slider changes
+sliders.forEach((slider) => {
+  Object.values(slider).forEach((input) => {
+    input.addEventListener("input", displayPattern);
+  });
 });
+
+decaySlider.addEventListener("input", displayPattern);
+thresholdSlider.addEventListener("input", displayPattern);
+
+// Randomize button handler
+document
+  .querySelector<HTMLButtonElement>("#regenerate")!
+  .addEventListener("click", () => {
+    sliders.forEach((slider) => {
+      slider.frequency.value = (
+        baseFrequency *
+        (1 + (Math.random() - 0.5))
+      ).toString();
+      slider.xOffset.value = (Math.random() - 0.5).toString();
+      slider.yOffset.value = (Math.random() - 0.5).toString();
+    });
+    displayPattern();
+  });
+
+// Animation parameters
+let time = 0;
+const animationSpeed = 0.001;
+
+function animate() {
+  time += animationSpeed;
+
+  // Update point positions with animation
+  sliders.forEach((slider, i) => {
+    const baseX = parseFloat(slider.xOffset.value);
+    const baseY = parseFloat(slider.yOffset.value);
+
+    // Add subtle circular motion
+    const radius = 0.1;
+    const angle = time + (i * Math.PI) / 2;
+
+    slider.xOffset.value = (baseX + radius * Math.cos(angle)).toString();
+    slider.yOffset.value = (baseY + radius * Math.sin(angle)).toString();
+  });
+
+  displayPattern();
+  requestAnimationFrame(animate);
+}
+
+// Start animation
+animate();

@@ -96,11 +96,9 @@ const sliders = Array(4)
 const decaySlider = document.querySelector<HTMLInputElement>("#decay")!;
 const thresholdSlider = document.querySelector<HTMLInputElement>("#threshold")!;
 
-// Create pattern generator once
-const pattern = new InterferencePattern(WIDTH, HEIGHT);
+// Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const ctx = canvas.getContext("2d")!;
-const imageData = new ImageData(WIDTH, HEIGHT);
+const pattern = new InterferencePattern(WIDTH, HEIGHT, canvas);
 
 function getPointParams() {
   return sliders.map((slider) => ({
@@ -111,17 +109,11 @@ function getPointParams() {
 }
 
 function displayPattern() {
-  // Generate pattern into buffer
   pattern.generate(
-    imageData.data,
     getPointParams() as [any, any, any, any],
     parseFloat(decaySlider.value),
     parseFloat(thresholdSlider.value)
   );
-
-  // Clear canvas and draw new pattern
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
-  ctx.putImageData(imageData, 0, 0);
 }
 
 // Update pattern when any slider changes

@@ -1,10 +1,3 @@
-interface Point {
-  x: number;
-  y: number;
-  phase: number;
-  frequency: number;
-}
-
 interface PointParameters {
   frequency: number;
   xOffset: number; // Offset from square corner in wavelengths
@@ -16,8 +9,70 @@ export class InterferencePattern {
   private height: number;
   private wavelength: number;
   private basePositions: { x: number; y: number }[];
+  private gl!: WebGL2RenderingContext;
+  private program!: WebGLProgram;
 
-  constructor(width: number, height: number) {
+  // Vertex shader - just renders a full-screen quad
+  private vertexShaderSource = `#version 300 es
+    in vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0.0, 1.0);
+    }
+  `;
+
+  // Fragment shader - optimized interference pattern calculation
+  private fragmentShaderSource = `#version 300 es
+    precision highp float;
+    out vec4 fragColor;
+    
+    uniform vec2 resolution;
+    uniform vec4 points[4];  // x, y, phase, frequency
+    uniform float decayRate;
+    uniform float threshold;
+    uniform float time;
+
+    // Optimized distance calculation
+    float fastDistance(vec2 a, vec2 b) {
+      vec2 diff = a - b;
+      return dot(diff, diff);
+    }
+
+    void main() {
+      vec2 pos = gl_FragCoord.xy;
+      float value = 0.0;
+
+      // Pre-calculate common values
+      vec2 noiseCoord = pos * 0.2;
+      float noiseBase = sin(noiseCoord.x + noiseCoord.y) * 0.05;
+
+      // Process all points in a single loop
+      for (int i = 0; i < 4; i++) {
+        vec2 pointPos = points[i].xy;
+        float phase = points[i].z;
+        float frequency = points[i].w;
+        
+        float distSq = fastDistance(pos, pointPos);
+        float dist = sqrt(distSq);
+        
+        float amplitude = exp(-dist * decayRate);
+        float modFreq = frequency + sin(dist * 0.002) * 0.01;
+        float wave = sin(dist * modFreq + phase + time) * amplitude;
+        float noise = noiseBase * amplitude;
+        
+        value += wave + noise;
+      }
+
+      // Optimized color calculation
+      value = (value / 4.0 + 1.0) / 2.0;
+      value = pow(value, 1.5);
+      value = value < 0.5 ? value * 0.8 : value * 1.2;
+      value = value > threshold ? 1.0 : 0.0;
+
+      fragColor = vec4(255.0 * value, 120.0 * value, 0.0, 255.0) / 255.0;
+    }
+  `;
+
+  constructor(width: number, height: number, canvas: HTMLCanvasElement) {
     this.width = width;
     this.height = height;
     this.wavelength = (2 * Math.PI) / 0.15;
@@ -34,50 +89,80 @@ export class InterferencePattern {
       { x: margin, y: squareTop + squareSize }, // Bottom Left
       { x: width - margin, y: squareTop + squareSize }, // Bottom Right
     ];
+
+    // Initialize WebGL2 with the provided canvas
+    this.initWebGL(canvas);
   }
 
-  private calculateIntensity(
-    x: number,
-    y: number,
-    points: Point[],
-    time: number,
-    decayRate: number,
-    threshold: number
-  ): number {
-    let value = 0;
+  private initWebGL(canvas: HTMLCanvasElement): void {
+    // Use WebGL2 context
+    this.gl = canvas.getContext("webgl2")!;
 
-    for (const point of points) {
-      const dx = x - point.x;
-      const dy = y - point.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+    // Create and compile shaders
+    const vertexShader = this.createShader(
+      this.gl.VERTEX_SHADER,
+      this.vertexShaderSource
+    );
+    const fragmentShader = this.createShader(
+      this.gl.FRAGMENT_SHADER,
+      this.fragmentShaderSource
+    );
 
-      // Apply exponential decay based on distance
-      const amplitude = Math.exp(-distance * decayRate);
+    // Create program
+    this.program = this.gl.createProgram()!;
+    this.gl.attachShader(this.program, vertexShader);
+    this.gl.attachShader(this.program, fragmentShader);
+    this.gl.linkProgram(this.program);
 
-      // Use point-specific frequency with small modulation
-      const frequency = point.frequency + Math.sin(distance * 0.002) * 0.01;
-      const wave =
-        Math.sin(distance * frequency + point.phase + time) * amplitude;
-
-      // Reduce noise and make it higher frequency
-      const noise = Math.sin(x * 0.2 + y * 0.2) * 0.05 * amplitude;
-
-      value += wave + noise;
+    if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
+      throw new Error("Failed to link shader program");
     }
 
-    // Normalize and sharpen the contrast
-    value = (value / points.length + 1) / 2;
+    // Create vertex buffer for full-screen quad
+    const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+    const vertexBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
 
-    // Apply contrast enhancement
-    value = Math.pow(value, 1.5);
-    value = value < 0.5 ? value * 0.8 : value * 1.2;
+    // Set up attributes and uniforms
+    const positionLocation = this.gl.getAttribLocation(
+      this.program,
+      "position"
+    );
+    this.gl.enableVertexAttribArray(positionLocation);
+    this.gl.vertexAttribPointer(
+      positionLocation,
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
 
-    // Apply threshold cutoff
-    return value > threshold ? 1 : 0;
+    // Set up resolution uniform
+    const resolutionLocation = this.gl.getUniformLocation(
+      this.program,
+      "resolution"
+    );
+    this.gl.useProgram(this.program);
+    this.gl.uniform2f(resolutionLocation, this.width, this.height);
+  }
+
+  private createShader(type: number, source: string): WebGLShader {
+    const shader = this.gl.createShader(type)!;
+    this.gl.shaderSource(shader, source);
+    this.gl.compileShader(shader);
+
+    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+      throw new Error(
+        "Shader compilation failed: " + this.gl.getShaderInfoLog(shader)
+      );
+    }
+
+    return shader;
   }
 
   public generate(
-    buffer: Uint8ClampedArray,
     pointParams: [
       PointParameters,
       PointParameters,
@@ -88,39 +173,29 @@ export class InterferencePattern {
     threshold: number = 0.5,
     time: number = 0
   ): void {
-    if (buffer.length !== this.width * this.height * 4) {
-      throw new Error(
-        `Buffer size must be ${
-          this.width * this.height * 4
-        } (width * height * 4)`
-      );
-    }
+    // Update points uniforms
+    const pointsLocation = this.gl.getUniformLocation(this.program, "points");
+    const points = pointParams.map((params, i) => {
+      const x = this.basePositions[i].x + params.xOffset * this.wavelength;
+      const y = this.basePositions[i].y + params.yOffset * this.wavelength;
+      const phase = (i * Math.PI) / 2;
+      return [x, y, phase, params.frequency];
+    });
+    this.gl.uniform4fv(pointsLocation, points.flat());
 
-    const points = pointParams.map((params, i) => ({
-      x: this.basePositions[i].x + params.xOffset * this.wavelength,
-      y: this.basePositions[i].y + params.yOffset * this.wavelength,
-      phase: (i * Math.PI) / 2, // 0, π/2, π, 3π/2
-      frequency: params.frequency,
-    }));
+    // Update other uniforms
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "decayRate")!,
+      decayRate
+    );
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "threshold")!,
+      threshold
+    );
+    this.gl.uniform1f(this.gl.getUniformLocation(this.program, "time")!, time);
 
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const intensity = this.calculateIntensity(
-          x,
-          y,
-          points,
-          time,
-          decayRate,
-          threshold
-        );
-        const idx = (y * this.width + x) * 4;
-
-        // Use a more saturated orange color
-        buffer[idx] = 255 * intensity; // R
-        buffer[idx + 1] = 120 * intensity; // G
-        buffer[idx + 2] = 0; // B
-        buffer[idx + 3] = 255; // A
-      }
-    }
+    // Render
+    this.gl.viewport(0, 0, this.width, this.height);
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
   }
 }
