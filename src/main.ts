@@ -1,4 +1,4 @@
-import { generateInterferencePattern } from "./image";
+import { InterferencePattern } from "./image";
 import "./style.css";
 
 // Paperback book aspect ratio (6:9)
@@ -96,6 +96,12 @@ const sliders = Array(4)
 const decaySlider = document.querySelector<HTMLInputElement>("#decay")!;
 const thresholdSlider = document.querySelector<HTMLInputElement>("#threshold")!;
 
+// Create pattern generator once
+const pattern = new InterferencePattern(WIDTH, HEIGHT);
+const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
+const ctx = canvas.getContext("2d")!;
+const imageData = new ImageData(WIDTH, HEIGHT);
+
 function getPointParams() {
   return sliders.map((slider) => ({
     frequency: parseFloat(slider.frequency.value),
@@ -105,15 +111,17 @@ function getPointParams() {
 }
 
 function displayPattern() {
-  const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-  generateInterferencePattern(
-    WIDTH,
-    HEIGHT,
-    canvas,
+  // Generate pattern into buffer
+  pattern.generate(
+    imageData.data,
     getPointParams() as [any, any, any, any],
     parseFloat(decaySlider.value),
     parseFloat(thresholdSlider.value)
   );
+
+  // Clear canvas and draw new pattern
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  ctx.putImageData(imageData, 0, 0);
 }
 
 // Update pattern when any slider changes

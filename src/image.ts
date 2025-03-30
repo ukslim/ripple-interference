@@ -122,29 +122,3 @@ export class InterferencePattern {
     }
   }
 }
-
-export function generateInterferencePattern(
-  width: number,
-  height: number,
-  targetCanvas: HTMLCanvasElement,
-  pointParams: [
-    PointParameters,
-    PointParameters,
-    PointParameters,
-    PointParameters
-  ],
-  decayRate: number = 0.001,
-  threshold: number = 0.5,
-  time: number = 0
-): void {
-  const pattern = new InterferencePattern(width, height);
-  const imageData = new ImageData(width, height);
-  pattern.generate(imageData.data, pointParams, decayRate, threshold, time);
-  const ctx = targetCanvas.getContext("2d")!;
-
-  // Clear the target canvas first
-  ctx.clearRect(0, 0, width, height);
-
-  // Put the image data
-  ctx.putImageData(imageData, 0, 0);
-}

@@ -1,4 +1,4 @@
-import { generateInterferencePattern } from "./image";
+import { InterferencePattern } from "./image";
 import "./style.css";
 
 // Paperback book aspect ratio (6:9)
@@ -64,23 +64,30 @@ function getAnimatedParams() {
     }));
 }
 
-function animate() {
-  const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
+// Create pattern generator once
+const pattern = new InterferencePattern(WIDTH, HEIGHT);
+const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
+const ctx = canvas.getContext("2d")!;
+const imageData = new ImageData(WIDTH, HEIGHT);
 
+function animate() {
   const decay =
     ranges.decay.min +
     ((Math.sin(time * animationSpeeds.decay + phaseOffsets.decay) + 1) / 2) *
       (ranges.decay.max - ranges.decay.min);
 
-  generateInterferencePattern(
-    WIDTH,
-    HEIGHT,
-    canvas,
+  // Generate pattern into buffer
+  pattern.generate(
+    imageData.data,
     getAnimatedParams() as [any, any, any, any],
     decay,
     fixedThreshold,
     time
   );
+
+  // Clear canvas and draw new pattern
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  ctx.putImageData(imageData, 0, 0);
 
   time += 0.016; // Approximately 60fps
   requestAnimationFrame(animate);
