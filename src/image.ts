@@ -38,7 +38,8 @@ export class InterferencePattern {
     }
 
     void main() {
-      vec2 pos = gl_FragCoord.xy;
+      // Flip Y coordinate to match browser's coordinate system
+      vec2 pos = vec2(gl_FragCoord.x, resolution.y - gl_FragCoord.y);
       float value = 0.0;
 
       // Pre-calculate common values
