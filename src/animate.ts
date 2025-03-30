@@ -91,7 +91,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <h1>Animated Interference Pattern</h1>
     <nav style="margin-bottom: 1rem;">
-      <a href="/">Back to Interactive Version</a>
+      <a href="/ripple-interference/">Back to Interactive Version</a>
     </nav>
     <div class="layout">
       <div class="canvas-container">
