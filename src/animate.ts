@@ -1,4 +1,5 @@
 import { InterferencePatternNew } from "./imageNew";
+import { generateWithOffsets } from "./legacyWrapper";
 import "./style.css";
 
 // Get viewport dimensions in millimeters (assuming 96 DPI)
@@ -93,7 +94,8 @@ function animate() {
     ((Math.sin(time * animationSpeeds.hue + phaseOffsets.hue) + 1) / 2) *
       (ranges.hue.max - ranges.hue.min);
 
-  pattern.generate(
+  generateWithOffsets(
+    pattern,
     getAnimatedParams() as [any, any, any, any],
     decay,
     fixedThreshold,

@@ -1,4 +1,5 @@
 import { InterferencePatternNew } from "./imageNew";
+import { generateWithOffsets } from "./legacyWrapper";
 import "./style.css";
 
 // Physical dimensions in millimeters
@@ -198,7 +199,8 @@ function getPointParams() {
 }
 
 function displayPattern() {
-  pattern.generate(
+  generateWithOffsets(
+    pattern,
     getPointParams() as [any, any, any, any],
     parseFloat(decaySlider.slider.value),
     parseFloat(thresholdSlider.slider.value),

@@ -1,6 +1,7 @@
 import { jest } from "@jest/globals";
 import { InterferencePattern } from "../image";
 import { InterferencePatternNew } from "../imageNew";
+import { generateWithOffsets } from "../legacyWrapper";
 
 // Extended to include our custom matcher
 declare global {
@@ -358,7 +359,10 @@ describe("Image Interference Pattern", () => {
         params.noiseAmplitude,
         params.hue
       );
-      newImpl.generate(
+
+      // Use the wrapper method for the new implementation
+      generateWithOffsets(
+        newImpl,
         pointParams,
         params.decayRate,
         params.threshold,

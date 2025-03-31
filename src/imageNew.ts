@@ -1,9 +1,18 @@
 import { PhysicalDimensions } from "./dimensions";
 
-interface PointParameters {
+// Original interface kept for backward compatibility
+interface PointParametersWithOffset {
   wavelength: number; // Wavelength in mm
   xOffset: number; // Offset from square corner in wavelengths
   yOffset: number; // Offset from square corner in wavelengths
+}
+
+// New interface with absolute positions
+interface PointParameters {
+  x: number; // Absolute x position in mm
+  y: number; // Absolute y position in mm
+  phase: number; // Phase offset in radians
+  wavelength: number; // Wavelength in mm
 }
 
 // Interface for tracking uniform locations to avoid looking them up on every frame
@@ -18,9 +27,9 @@ interface UniformLocations {
 }
 
 export class InterferencePatternNew {
-  private dimensions: PhysicalDimensions;
+  // Keep dimensions public for the wrapper function to access
+  readonly dimensions: PhysicalDimensions;
   private wavelength: number;
-  private basePositions: { x: number; y: number }[];
   private gl!: WebGL2RenderingContext;
   private program!: WebGLProgram;
   private uniforms!: UniformLocations;
@@ -131,21 +140,6 @@ export class InterferencePatternNew {
     this.dimensions = new PhysicalDimensions(widthMm, heightMm, canvas);
     this.wavelength = (2 * Math.PI) / 0.15;
 
-    // Calculate square dimensions in physical units
-    const physicalDims = this.dimensions.getPhysicalDimensions();
-    const margin = physicalDims.width * 0.2;
-    const squareSize = physicalDims.width - 2 * margin;
-    const squareTop =
-      (physicalDims.height - squareSize) / 2 - physicalDims.height / 9;
-
-    // Initialize 4 points in a roughly square pattern
-    this.basePositions = [
-      { x: margin, y: squareTop }, // Top Left
-      { x: physicalDims.width - margin, y: squareTop }, // Top Right
-      { x: margin, y: squareTop + squareSize }, // Bottom Left
-      { x: physicalDims.width - margin, y: squareTop + squareSize }, // Bottom Right
-    ];
-
     // Initialize WebGL2 with the provided canvas
     this.initWebGL(canvas);
   }
@@ -254,6 +248,9 @@ export class InterferencePatternNew {
     return shader;
   }
 
+  /**
+   * Generate interference pattern with absolute point positions
+   */
   public generate(
     pointParams: [
       PointParameters,
@@ -268,15 +265,10 @@ export class InterferencePatternNew {
     noiseAmplitude: number = 0.05,
     hue: number = 0
   ): void {
-    // Process all point data at once
-    const points = pointParams.map((params, i) => {
-      const physicalPos = this.basePositions[i];
-      const bufferPos = this.dimensions.mmToBuffer(
-        physicalPos.x + params.xOffset * this.wavelength,
-        physicalPos.y + params.yOffset * this.wavelength
-      );
-      const phase = (i * Math.PI) / 2;
-      return [bufferPos.x, bufferPos.y, phase, params.wavelength];
+    // Convert physical mm positions to buffer coordinates
+    const points = pointParams.map((params) => {
+      const bufferPos = this.dimensions.mmToBuffer(params.x, params.y);
+      return [bufferPos.x, bufferPos.y, params.phase, params.wavelength];
     });
 
     // Set all uniform values efficiently using cached locations
