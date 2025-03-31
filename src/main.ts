@@ -1,10 +1,15 @@
-import { InterferencePatternNew } from "./imageNew";
-import { generateWithOffsets } from "./legacyWrapper";
+import { InterferencePatternNew } from "./image";
 import "./style.css";
 
-// Physical dimensions in millimeters
+// Physical dimensions in millimeters (for use in the wrapper)
 const WIDTH_MM = 110;
 const HEIGHT_MM = 178;
+const PIXELS_PER_MM = 96 / 25.4;
+
+// Set fixed canvas dimensions for consistent display
+// Use a reasonable size that maintains the aspect ratio
+const CANVAS_WIDTH = WIDTH_MM * PIXELS_PER_MM;
+const CANVAS_HEIGHT = HEIGHT_MM * PIXELS_PER_MM;
 
 // Default parameters
 const baseWavelength = 41.89; // 2π/0.15, converting from previous baseFrequency
@@ -79,7 +84,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                    min="0" 
                    max="6.283" 
                    step="0.01" 
-                   value="0">
+                   value="0.340">
           </div>
         </div>
         ${pointNames
@@ -181,13 +186,46 @@ const hueSlider = {
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const pattern = new InterferencePatternNew(WIDTH_MM, HEIGHT_MM, canvas);
+
+// Set fixed styling for the canvas to prevent stretching
+canvas.style.width = `${CANVAS_WIDTH}px`;
+canvas.style.height = `${CANVAS_HEIGHT}px`;
+canvas.style.maxWidth = `${CANVAS_WIDTH}px`;
+canvas.style.objectFit = "contain";
+canvas.style.margin = "0 auto";
+
+// Also set fixed dimensions for the container
+const canvasContainer =
+  document.querySelector<HTMLDivElement>(".canvas-container")!;
+canvasContainer.style.width = `${CANVAS_WIDTH}px`;
+canvasContainer.style.height = `${CANVAS_HEIGHT}px`;
+canvasContainer.style.minHeight = `${CANVAS_HEIGHT}px`;
+canvasContainer.style.overflow = "hidden";
+canvasContainer.style.flexShrink = "0"; // Prevent container from shrinking
+
+// Use fixed dimensions for the canvas
+const pattern = new InterferencePatternNew(CANVAS_WIDTH, CANVAS_HEIGHT, canvas);
 
 function updateValueDisplay(slider: {
   slider: HTMLInputElement;
   display: HTMLSpanElement;
 }) {
   slider.display.textContent = parseFloat(slider.slider.value).toFixed(3);
+}
+
+// Base positions calculation function (previously in legacyWrapper)
+function calculateBasePositions() {
+  const margin = CANVAS_WIDTH * 0.2;
+  const squareSize = CANVAS_WIDTH - 2 * margin;
+  const squareTop = (CANVAS_HEIGHT - squareSize) / 2 - CANVAS_HEIGHT / 9;
+
+  // Base positions in a square pattern in pixels
+  return [
+    { x: margin, y: squareTop }, // Top Left
+    { x: CANVAS_WIDTH - margin, y: squareTop }, // Top Right
+    { x: margin, y: squareTop + squareSize }, // Bottom Left
+    { x: CANVAS_WIDTH - margin, y: squareTop + squareSize }, // Bottom Right
+  ];
 }
 
 function getPointParams() {
@@ -199,9 +237,22 @@ function getPointParams() {
 }
 
 function displayPattern() {
-  generateWithOffsets(
-    pattern,
-    getPointParams() as [any, any, any, any],
+  const offsetParams = getPointParams();
+  const basePositions = calculateBasePositions();
+
+  // Convert from offset-based parameters to absolute positions
+  const absoluteParams = offsetParams.map((params, i) => {
+    return {
+      x: basePositions[i].x + params.xOffset * params.wavelength,
+      y: basePositions[i].y + params.yOffset * params.wavelength,
+      phase: (i * Math.PI) / 2, // Same phase calculation as before
+      wavelength: params.wavelength,
+    };
+  });
+
+  // Call generate directly with absolute positions
+  pattern.generate(
+    absoluteParams as [any, any, any, any],
     parseFloat(decaySlider.slider.value),
     parseFloat(thresholdSlider.slider.value),
     0,

@@ -1,17 +1,29 @@
-import { PhysicalDimensions } from "./dimensions";
-
+// New interface with absolute positions
 interface PointParameters {
-  wavelength: number; // Wavelength in mm
-  xOffset: number; // Offset from square corner in wavelengths
-  yOffset: number; // Offset from square corner in wavelengths
+  x: number; // Absolute x position in pixels
+  y: number; // Absolute y position in pixels
+  phase: number; // Phase offset in radians
+  wavelength: number; // Wavelength in pixels
 }
 
-export class InterferencePattern {
-  private dimensions: PhysicalDimensions;
-  private wavelength: number;
-  private basePositions: { x: number; y: number }[];
+// Interface for tracking uniform locations to avoid looking them up on every frame
+interface UniformLocations {
+  points: WebGLUniformLocation | null;
+  decayRate: WebGLUniformLocation | null;
+  threshold: WebGLUniformLocation | null;
+  time: WebGLUniformLocation | null;
+  noiseFrequency: WebGLUniformLocation | null;
+  noiseAmplitude: WebGLUniformLocation | null;
+  hue: WebGLUniformLocation | null;
+}
+
+export class InterferencePatternNew {
+  // Canvas dimensions
+  readonly width: number;
+  readonly height: number;
   private gl!: WebGL2RenderingContext;
   private program!: WebGLProgram;
+  private uniforms!: UniformLocations;
 
   // Vertex shader - just renders a full-screen quad
   private vertexShaderSource = `#version 300 es
@@ -35,15 +47,30 @@ export class InterferencePattern {
     uniform float noiseAmplitude;
     uniform float hue;  // Hue in radians (0 to 2π)
 
-    // Convert pixel distance to millimeters (96 DPI = 96/25.4 pixels per mm)
-    float pixelToMm(float pixelDist) {
-      return pixelDist * (25.4 / 96.0);
-    }
-
-    // Optimized distance calculation
-    float fastDistance(vec2 a, vec2 b) {
+    // Fast square distance calculation - saves a sqrt operation
+    float fastDistanceSq(vec2 a, vec2 b) {
       vec2 diff = a - b;
       return dot(diff, diff);
+    }
+
+    // Optimized HSV to RGB conversion
+    vec3 hsvToRgb(float h, float s, float v) {
+      vec3 rgb;
+      
+      // Optimized version using fewer calculations
+      float c = v * s;
+      float h6 = h * (1.0 / 3.14159 * 3.0);
+      float x = c * (1.0 - abs(mod(h6, 2.0) - 1.0));
+      float m = v - c;
+      
+      if (h6 < 1.0) rgb = vec3(c, x, 0.0);
+      else if (h6 < 2.0) rgb = vec3(x, c, 0.0);
+      else if (h6 < 3.0) rgb = vec3(0.0, c, x);
+      else if (h6 < 4.0) rgb = vec3(0.0, x, c);
+      else if (h6 < 5.0) rgb = vec3(x, 0.0, c);
+      else rgb = vec3(c, 0.0, x);
+      
+      return rgb + m;
     }
 
     void main() {
@@ -55,67 +82,52 @@ export class InterferencePattern {
       vec2 noiseCoord = pos * noiseFrequency;
       float noiseBase = sin(noiseCoord.x + noiseCoord.y) * noiseAmplitude;
 
-      // Process all points in a single loop
+      // Process all points in a single loop with optimizations
       for (int i = 0; i < 4; i++) {
         vec2 pointPos = points[i].xy;
         float phase = points[i].z;
         float wavelength = points[i].w;
-        float frequency = 6.28318530718 / wavelength; // Convert wavelength to frequency (2π/λ)
+        float frequency = 6.28318530718 / wavelength; // 2π/λ
         
-        float distSq = fastDistance(pos, pointPos);
-        float dist = sqrt(distSq);
-        float distMm = pixelToMm(dist);
+        // Faster distance calculation using square distance where possible
+        float distSq = fastDistanceSq(pos, pointPos);
+        float dist = sqrt(distSq); // Still need sqrt for wave calculation
         
-        float amplitude = exp(-distMm * decayRate);
+        // Optimized amplitude calculation
+        float amplitude = exp(-dist * decayRate);
+        
+        // Calculate wave effect with small frequency modulation for visual interest
         float modFreq = frequency + sin(dist * 0.002) * 0.01;
         float wave = sin(dist * modFreq + phase + time) * amplitude;
+        
+        // Add noise scaled by amplitude
         float noise = noiseBase * amplitude;
         
         value += wave + noise;
       }
 
-      // Optimized color calculation
+      // Optimized color calculation with direct checks
       value = (value / 4.0 + 1.0) / 2.0;
       value = pow(value, 1.5);
       value = value < 0.5 ? value * 0.8 : value * 1.2;
-      value = value > threshold ? 1.0 : 0.0;
+      
+      // Hard threshold for binary appearance with optimization
+      // Using step() which is optimized in most GPU implementations
+      value = step(threshold, value);
 
-      // Convert HSV to RGB using smooth trigonometric functions
-      float h = hue;
-      float s = 1.0;
-      float v = value;
-      
-      float c = v * s;
-      float x = c * (1.0 - abs(mod(h / (2.0 * 3.14159), 2.0) - 1.0));
-      float m = v - c;
-      
-      // Use smooth trigonometric functions for RGB components
-      float r = c * (1.0 + cos(h)) / 2.0;
-      float g = c * (1.0 + cos(h - 2.0 * 3.14159 / 3.0)) / 2.0;
-      float b = c * (1.0 + cos(h - 4.0 * 3.14159 / 3.0)) / 2.0;
-      
-      fragColor = vec4(r + m, g + m, b + m, 1.0);
+      // Use optimized HSV to RGB conversion
+      vec3 rgb = hsvToRgb(hue, 1.0, value);
+      fragColor = vec4(rgb, 1.0);
     }
   `;
 
-  constructor(widthMm: number, heightMm: number, canvas: HTMLCanvasElement) {
-    this.dimensions = new PhysicalDimensions(widthMm, heightMm, canvas);
-    this.wavelength = (2 * Math.PI) / 0.15;
+  constructor(width: number, height: number, canvas: HTMLCanvasElement) {
+    this.width = width;
+    this.height = height;
 
-    // Calculate square dimensions in physical units
-    const physicalDims = this.dimensions.getPhysicalDimensions();
-    const margin = physicalDims.width * 0.2;
-    const squareSize = physicalDims.width - 2 * margin;
-    const squareTop =
-      (physicalDims.height - squareSize) / 2 - physicalDims.height / 9;
-
-    // Initialize 4 points in a roughly square pattern
-    this.basePositions = [
-      { x: margin, y: squareTop }, // Top Left
-      { x: physicalDims.width - margin, y: squareTop }, // Top Right
-      { x: margin, y: squareTop + squareSize }, // Bottom Left
-      { x: physicalDims.width - margin, y: squareTop + squareSize }, // Bottom Right
-    ];
+    // Set canvas size
+    canvas.width = width;
+    canvas.height = height;
 
     // Initialize WebGL2 with the provided canvas
     this.initWebGL(canvas);
@@ -180,24 +192,34 @@ export class InterferencePattern {
       0
     );
 
+    // Cache uniform locations for better performance
+    this.uniforms = {
+      points: this.gl.getUniformLocation(this.program, "points"),
+      decayRate: this.gl.getUniformLocation(this.program, "decayRate"),
+      threshold: this.gl.getUniformLocation(this.program, "threshold"),
+      time: this.gl.getUniformLocation(this.program, "time"),
+      noiseFrequency: this.gl.getUniformLocation(
+        this.program,
+        "noiseFrequency"
+      ),
+      noiseAmplitude: this.gl.getUniformLocation(
+        this.program,
+        "noiseAmplitude"
+      ),
+      hue: this.gl.getUniformLocation(this.program, "hue"),
+    };
+
     // Set up resolution uniform
     const resolutionLocation = this.gl.getUniformLocation(
       this.program,
       "resolution"
     );
     this.gl.useProgram(this.program);
-    const bufferDims = this.dimensions.getBufferDimensions();
-    this.gl.uniform2f(resolutionLocation, bufferDims.width, bufferDims.height);
+    this.gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
 
     // Set initial noise parameters
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "noiseFrequency")!,
-      0.2
-    );
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "noiseAmplitude")!,
-      0.05
-    );
+    this.gl.uniform1f(this.uniforms.noiseFrequency!, 0.2);
+    this.gl.uniform1f(this.uniforms.noiseAmplitude!, 0.05);
   }
 
   private createShader(type: number, source: string): WebGLShader {
@@ -214,6 +236,9 @@ export class InterferencePattern {
     return shader;
   }
 
+  /**
+   * Generate interference pattern with absolute point positions in pixel coordinates
+   */
   public generate(
     pointParams: [
       PointParameters,
@@ -228,42 +253,22 @@ export class InterferencePattern {
     noiseAmplitude: number = 0.05,
     hue: number = 0
   ): void {
-    // Update points uniforms
-    const pointsLocation = this.gl.getUniformLocation(this.program, "points");
-    const points = pointParams.map((params, i) => {
-      const physicalPos = this.basePositions[i];
-      const bufferPos = this.dimensions.mmToBuffer(
-        physicalPos.x + params.xOffset * this.wavelength,
-        physicalPos.y + params.yOffset * this.wavelength
-      );
-      const phase = (i * Math.PI) / 2;
-      return [bufferPos.x, bufferPos.y, phase, params.wavelength];
+    // Use point coordinates directly - no conversion needed anymore
+    const points = pointParams.map((params) => {
+      return [params.x, params.y, params.phase, params.wavelength];
     });
-    this.gl.uniform4fv(pointsLocation, points.flat());
 
-    // Update other uniforms
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "decayRate")!,
-      decayRate
-    );
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "threshold")!,
-      threshold
-    );
-    this.gl.uniform1f(this.gl.getUniformLocation(this.program, "time")!, time);
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "noiseFrequency")!,
-      noiseFrequency
-    );
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.program, "noiseAmplitude")!,
-      noiseAmplitude
-    );
-    this.gl.uniform1f(this.gl.getUniformLocation(this.program, "hue")!, hue);
+    // Set all uniform values efficiently using cached locations
+    this.gl.uniform4fv(this.uniforms.points!, points.flat());
+    this.gl.uniform1f(this.uniforms.decayRate!, decayRate);
+    this.gl.uniform1f(this.uniforms.threshold!, threshold);
+    this.gl.uniform1f(this.uniforms.time!, time);
+    this.gl.uniform1f(this.uniforms.noiseFrequency!, noiseFrequency);
+    this.gl.uniform1f(this.uniforms.noiseAmplitude!, noiseAmplitude);
+    this.gl.uniform1f(this.uniforms.hue!, hue);
 
     // Render
-    const bufferDims = this.dimensions.getBufferDimensions();
-    this.gl.viewport(0, 0, bufferDims.width, bufferDims.height);
+    this.gl.viewport(0, 0, this.width, this.height);
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
   }
 }
