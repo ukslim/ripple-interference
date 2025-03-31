@@ -103,12 +103,27 @@ function getAnimatedParams(maxDistance: number) {
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="fullscreen">
     <canvas id="display"></canvas>
+    <div id="fullscreen-message">click to fullscreen</div>
   </div>
 `;
 
 // Override any constraints from the main CSS for the #app element
 const appElement = document.querySelector<HTMLDivElement>("#app")!;
 appElement.style.maxWidth = "100vw";
+
+// Get reference to the fullscreen message for fade-out
+const fullscreenMessage = document.querySelector<HTMLDivElement>(
+  "#fullscreen-message"
+)!;
+
+// Fade out the message after 3 seconds
+setTimeout(() => {
+  fullscreenMessage.style.opacity = "0";
+  // Remove from DOM after fade completes
+  setTimeout(() => {
+    fullscreenMessage.remove();
+  }, 1000);
+}, 3000);
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
@@ -121,6 +136,19 @@ canvas.style.display = "block";
 // Set initial canvas dimensions
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
+// Add click event listener to toggle fullscreen
+canvas.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.error(`Error attempting to enable fullscreen: ${err.message}`);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+});
 
 // Create the pattern with pixel dimensions
 let pattern = new InterferencePatternNew(
