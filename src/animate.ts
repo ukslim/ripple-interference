@@ -1,4 +1,4 @@
-import { InterferencePattern } from "./image";
+import { InterferencePatternNew } from "./imageNew";
 import "./style.css";
 
 // Get viewport dimensions in millimeters (assuming 96 DPI)
@@ -80,7 +80,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const pattern = new InterferencePattern(WIDTH_MM, HEIGHT_MM, canvas);
+const pattern = new InterferencePatternNew(WIDTH_MM, HEIGHT_MM, canvas);
 
 function animate() {
   const decay =

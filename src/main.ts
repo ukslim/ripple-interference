@@ -1,4 +1,4 @@
-import { InterferencePattern } from "./image";
+import { InterferencePatternNew } from "./imageNew";
 import "./style.css";
 
 // Physical dimensions in millimeters
@@ -180,7 +180,7 @@ const hueSlider = {
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
-const pattern = new InterferencePattern(WIDTH_MM, HEIGHT_MM, canvas);
+const pattern = new InterferencePatternNew(WIDTH_MM, HEIGHT_MM, canvas);
 
 function updateValueDisplay(slider: {
   slider: HTMLInputElement;
