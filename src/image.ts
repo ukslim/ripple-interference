@@ -33,6 +33,7 @@ export class InterferencePattern {
     uniform float time;
     uniform float noiseFrequency;
     uniform float noiseAmplitude;
+    uniform float hue;  // Hue in radians (0 to 2π)
 
     // Convert pixel distance to millimeters (96 DPI = 96/25.4 pixels per mm)
     float pixelToMm(float pixelDist) {
@@ -79,7 +80,21 @@ export class InterferencePattern {
       value = value < 0.5 ? value * 0.8 : value * 1.2;
       value = value > threshold ? 1.0 : 0.0;
 
-      fragColor = vec4(255.0 * value, 120.0 * value, 0.0, 255.0) / 255.0;
+      // Convert HSV to RGB using smooth trigonometric functions
+      float h = hue;
+      float s = 1.0;
+      float v = value;
+      
+      float c = v * s;
+      float x = c * (1.0 - abs(mod(h / (2.0 * 3.14159), 2.0) - 1.0));
+      float m = v - c;
+      
+      // Use smooth trigonometric functions for RGB components
+      float r = c * (1.0 + cos(h)) / 2.0;
+      float g = c * (1.0 + cos(h - 2.0 * 3.14159 / 3.0)) / 2.0;
+      float b = c * (1.0 + cos(h - 4.0 * 3.14159 / 3.0)) / 2.0;
+      
+      fragColor = vec4(r + m, g + m, b + m, 1.0);
     }
   `;
 
@@ -210,7 +225,8 @@ export class InterferencePattern {
     threshold: number = 0.5,
     time: number = 0,
     noiseFrequency: number = 0.2,
-    noiseAmplitude: number = 0.05
+    noiseAmplitude: number = 0.05,
+    hue: number = 0
   ): void {
     // Update points uniforms
     const pointsLocation = this.gl.getUniformLocation(this.program, "points");
@@ -243,6 +259,7 @@ export class InterferencePattern {
       this.gl.getUniformLocation(this.program, "noiseAmplitude")!,
       noiseAmplitude
     );
+    this.gl.uniform1f(this.gl.getUniformLocation(this.program, "hue")!, hue);
 
     // Render
     const bufferDims = this.dimensions.getBufferDimensions();

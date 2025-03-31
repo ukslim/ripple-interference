@@ -18,6 +18,7 @@ const animationSpeeds = {
   xOffset: 0.02,
   yOffset: 0.02,
   decay: 0.02,
+  hue: 0.1, // Slower hue animation
 };
 
 // Initial phase offsets for each parameter
@@ -26,6 +27,7 @@ const phaseOffsets = {
   xOffset: [0, Math.PI / 3, (2 * Math.PI) / 3, Math.PI],
   yOffset: [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4],
   decay: 0,
+  hue: 0,
 };
 
 // Parameter ranges
@@ -34,6 +36,7 @@ const ranges = {
   xOffset: { min: -1, max: 1 }, // Reduced range for physical size
   yOffset: { min: -1, max: 1 }, // Reduced range for physical size
   decay: { min: 0.0001, max: 0.005 },
+  hue: { min: 0, max: 2 * Math.PI }, // Full hue range
 };
 
 // Fixed threshold value (middle of original range)
@@ -85,11 +88,19 @@ function animate() {
     ((Math.sin(time * animationSpeeds.decay + phaseOffsets.decay) + 1) / 2) *
       (ranges.decay.max - ranges.decay.min);
 
+  const hue =
+    ranges.hue.min +
+    ((Math.sin(time * animationSpeeds.hue + phaseOffsets.hue) + 1) / 2) *
+      (ranges.hue.max - ranges.hue.min);
+
   pattern.generate(
     getAnimatedParams() as [any, any, any, any],
     decay,
     fixedThreshold,
-    time
+    time,
+    0.2, // noiseFrequency
+    0.05, // noiseAmplitude
+    hue
   );
 
   time += 0.016; // Approximately 60fps

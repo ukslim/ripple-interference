@@ -68,6 +68,18 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                    step="0.001" 
                    value="0.05">
           </div>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Hue</span>
+              <span class="value-display" id="hue-value">0.00</span>
+            </div>
+            <input type="range" 
+                   id="hue" 
+                   min="0" 
+                   max="6.283" 
+                   step="0.01" 
+                   value="0">
+          </div>
         </div>
         ${pointNames
           .map(
@@ -161,6 +173,10 @@ const noiseAmpSlider = {
   slider: document.querySelector<HTMLInputElement>("#noiseAmp")!,
   display: document.querySelector<HTMLSpanElement>("#noiseAmp-value")!,
 };
+const hueSlider = {
+  slider: document.querySelector<HTMLInputElement>("#hue")!,
+  display: document.querySelector<HTMLSpanElement>("#hue-value")!,
+};
 
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
@@ -188,7 +204,8 @@ function displayPattern() {
     parseFloat(thresholdSlider.slider.value),
     0,
     parseFloat(noiseFreqSlider.slider.value),
-    parseFloat(noiseAmpSlider.slider.value)
+    parseFloat(noiseAmpSlider.slider.value),
+    parseFloat(hueSlider.slider.value)
   );
 }
 
@@ -202,14 +219,18 @@ sliders.forEach((slider) => {
   });
 });
 
-[decaySlider, thresholdSlider, noiseFreqSlider, noiseAmpSlider].forEach(
-  (slider) => {
-    slider.slider.addEventListener("input", () => {
-      updateValueDisplay(slider);
-      displayPattern();
-    });
-  }
-);
+[
+  decaySlider,
+  thresholdSlider,
+  noiseFreqSlider,
+  noiseAmpSlider,
+  hueSlider,
+].forEach((slider) => {
+  slider.slider.addEventListener("input", () => {
+    updateValueDisplay(slider);
+    displayPattern();
+  });
+});
 
 // Randomize button handler
 document
