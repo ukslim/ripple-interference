@@ -1,9 +1,13 @@
 import { InterferencePattern } from "./image";
 import "./style.css";
 
-// Physical dimensions in millimeters
-const WIDTH_MM = 110;
-const HEIGHT_MM = 178;
+// Get viewport dimensions in millimeters (assuming 96 DPI)
+const DPI = 96;
+const PIXELS_PER_MM = DPI / 25.4;
+
+// Calculate physical dimensions based on viewport size
+const WIDTH_MM = window.innerWidth / PIXELS_PER_MM;
+const HEIGHT_MM = window.innerHeight / PIXELS_PER_MM;
 
 // Default parameters
 const baseWavelength = 41.89; // 2π/0.15, converting from previous baseFrequency
@@ -66,16 +70,8 @@ function getAnimatedParams() {
 
 // Set up the page
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <div>
-    <h1>Animated Interference Pattern</h1>
-    <nav style="margin-bottom: 1rem;">
-      <a href="/ripple-interference/">Back to Interactive Version</a>
-    </nav>
-    <div class="layout">
-      <div class="canvas-container">
-        <canvas id="display"></canvas>
-      </div>
-    </div>
+  <div class="fullscreen">
+    <canvas id="display"></canvas>
   </div>
 `;
 
