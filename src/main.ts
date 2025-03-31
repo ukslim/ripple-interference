@@ -187,21 +187,35 @@ const hueSlider = {
 // Create pattern generator with the display canvas
 const canvas = document.querySelector<HTMLCanvasElement>("#display")!;
 
-// Set fixed styling for the canvas to prevent stretching
-canvas.style.width = `${CANVAS_WIDTH}px`;
-canvas.style.height = `${CANVAS_HEIGHT}px`;
+// Make canvas responsive but maintain aspect ratio
+const aspectRatio = CANVAS_HEIGHT / CANVAS_WIDTH;
+canvas.style.width = "100%";
+canvas.style.height = "auto";
 canvas.style.maxWidth = `${CANVAS_WIDTH}px`;
 canvas.style.objectFit = "contain";
 canvas.style.margin = "0 auto";
 
-// Also set fixed dimensions for the container
+// Make container responsive
 const canvasContainer =
   document.querySelector<HTMLDivElement>(".canvas-container")!;
-canvasContainer.style.width = `${CANVAS_WIDTH}px`;
-canvasContainer.style.height = `${CANVAS_HEIGHT}px`;
-canvasContainer.style.minHeight = `${CANVAS_HEIGHT}px`;
-canvasContainer.style.overflow = "hidden";
-canvasContainer.style.flexShrink = "0"; // Prevent container from shrinking
+canvasContainer.style.width = "100%";
+canvasContainer.style.maxWidth = `${CANVAS_WIDTH}px`;
+canvasContainer.style.height = "auto";
+canvasContainer.style.minHeight = `${Math.min(
+  CANVAS_HEIGHT,
+  window.innerHeight * 0.7
+)}px`;
+canvasContainer.style.position = "relative";
+canvasContainer.style.aspectRatio = `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}`;
+
+// Remove the overflow hidden to allow scrolling
+canvasContainer.style.overflow = "visible";
+
+// Enable responsive design for the app element
+const appElement = document.querySelector<HTMLDivElement>("#app")!;
+appElement.style.overflow = "auto";
+appElement.style.height = "auto";
+appElement.style.minHeight = "100vh";
 
 // Use fixed dimensions for the canvas
 const pattern = new InterferencePatternNew(CANVAS_WIDTH, CANVAS_HEIGHT, canvas);

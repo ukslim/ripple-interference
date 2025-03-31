@@ -29,6 +29,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: #fffff0; /* Ivory color */
+  overflow-y: auto;
 }
 
 h1 {
@@ -42,11 +43,10 @@ h1 {
   margin: 0 auto;
   padding: 1rem;
   text-align: center;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 .layout {
@@ -57,6 +57,7 @@ h1 {
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-start;
+  overflow-y: auto;
 }
 
 .controls {
@@ -128,8 +129,10 @@ input[type="range"] {
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 .canvas-container canvas {
@@ -245,4 +248,21 @@ canvas {
   z-index: 1000;
   opacity: 1;
   transition: opacity 1s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .controls {
+    max-width: 100%;
+    width: 90%;
+    margin-bottom: 1rem;
+  }
+
+  .canvas-container {
+    max-width: 95%;
+  }
 }
