@@ -194,16 +194,24 @@ body.landscape #display {
 }
 
 body.landscape .controls {
-  position: fixed;
+  position: absolute; /* Changed from fixed to absolute for better scrolling */
   right: 0;
   top: 0;
   width: 50vw;
-  height: 100vh;
+  height: 100%; /* Use % instead of vh */
   display: block;
   z-index: 2;
-  padding: 1rem;
-  overflow-y: auto;
+  padding: 1rem 1rem 2rem 1rem; /* Added bottom padding for scrolling */
+  overflow-y: scroll; /* Force scroll instead of auto */
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+  overscroll-behavior: contain; /* Prevent pull-to-refresh */
+}
+
+body.landscape .controls::after {
+  content: "";
+  display: block;
+  height: 2rem; /* Extra space at bottom for scrolling */
 }
 
 #regenerate {
@@ -222,6 +230,18 @@ body.landscape .controls {
   background: #357abd;
 }
 
+/* Make "Animated" link visible and styled */
+.controls a {
+  display: block;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  text-align: center;
+  color: white;
+  background: rgba(100, 108, 255, 0.8);
+  border-radius: 4px;
+  text-decoration: none;
+}
+
 /* Improved mobile controls for touch */
 @media (max-width: 768px) {
   input[type="range"] {
@@ -233,15 +253,37 @@ body.landscape .controls {
     margin-bottom: 0.4rem;
   }
 
-  /* Reduce padding to save space */
+  /* Reduce padding to save space but keep bottom padding */
   body.landscape .controls {
-    padding: 0.8rem;
+    padding: 0.8rem 0.8rem 3rem 0.8rem;
   }
 
   #regenerate {
     padding: 0.5rem;
     font-size: 1rem;
-    margin-top: 0.5rem;
+    margin: 1rem 0;
+  }
+}
+
+/* Small and ultra-wide landscape screens */
+@media (max-height: 500px) and (orientation: landscape) {
+  body.landscape .controls {
+    padding: 0.5rem 0.5rem 3rem 0.5rem;
+  }
+
+  .slider-group {
+    margin-bottom: 0.2rem;
+    height: 20px;
+  }
+
+  .point-controls {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+  }
+
+  .global-controls {
+    margin-bottom: 0.15rem;
+    padding-bottom: 0.15rem;
   }
 }
 

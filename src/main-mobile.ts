@@ -188,6 +188,18 @@ function handleOrientationChange() {
   document.body.classList.toggle("landscape", isLandscape);
   document.body.classList.toggle("portrait", !isLandscape);
 
+  // For iOS to recalculate scrollable area correctly after orientation change
+  if (isLandscape) {
+    // Force reflow of the controls container to fix iOS scroll issues
+    const controls = document.querySelector<HTMLElement>(".controls");
+    if (controls) {
+      controls.style.display = "none";
+      // Force reflow
+      void controls.offsetHeight;
+      controls.style.display = "block";
+    }
+  }
+
   // Force layout recalculation
   updateCanvasSize();
 
