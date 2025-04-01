@@ -138,34 +138,69 @@ body.landscape #display {
 }
 
 body.landscape .controls {
-  position: fixed;
+  position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
   width: 70vw;
-  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.75rem;
+  padding-bottom: 6rem;
   display: flex;
   flex-direction: column;
   z-index: 2;
-  padding: 0.75rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
   box-sizing: border-box;
 }
 
-/* Controls section */
-.controls {
-  background: rgba(0, 0, 0, 0.8);
-  border: none;
-  border-radius: 0;
-  font-size: 0.8rem;
-  overflow-y: auto;
-  box-sizing: border-box;
+/* Force content to be high enough to enable scrolling */
+.controls-content {
+  display: flex;
+  flex-direction: column;
+  min-height: min-content;
+}
+
+/* Make sure the button is always visible */
+#regenerate {
+  width: 100%;
   padding: 0.5rem;
-  flex-shrink: 0;
-  display: none; /* Hidden by default */
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Fix for iOS scroll momentum */
+@supports (-webkit-touch-callout: none) {
+  body.landscape .controls {
+    /* iOS-specific scroll fix */
+    -webkit-transform: translateZ(0);
+    padding-bottom: 8rem; /* Even more padding for iOS */
+  }
+}
+
+/* Ensure the animated link is visible */
+.controls a {
+  margin-top: auto;
+  margin-bottom: 1.5rem;
+}
+
+/* Clear the footer spacer */
+.controls::after {
+  content: "";
+  display: block;
+  height: 4rem;
+  width: 100%;
+}
+
+/* Make sure content is properly sized */
+.points-grid {
+  margin-bottom: 1rem;
 }
 
 /* Slider layout - completely revised */
@@ -209,30 +244,6 @@ input[type="range"] {
   height: 14px;
   margin: 0;
   background: #444;
-}
-
-#regenerate {
-  width: 100%;
-  padding: 0.5rem;
-  background: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
-}
-
-.controls a {
-  display: block;
-  width: 100%;
-  padding: 0.5rem;
-  text-align: center;
-  color: white;
-  background: rgba(100, 108, 255, 0.8);
-  border-radius: 4px;
-  text-decoration: none;
-  box-sizing: border-box;
 }
 
 /* Rotation message */
@@ -283,8 +294,8 @@ input[type="range"] {
   }
 
   body.landscape .controls {
-    width: 70vw;
     padding: 0.5rem;
+    padding-bottom: 5rem;
   }
 
   .slider-group {
@@ -308,8 +319,8 @@ input[type="range"] {
   }
 
   body.landscape .controls {
-    width: 72vw;
     padding: 0.4rem;
+    padding-bottom: 5rem;
   }
 
   .slider-group {
@@ -338,8 +349,8 @@ input[type="range"] {
   }
 
   body.landscape .controls {
-    width: 75vw;
     padding: 0.3rem;
+    padding-bottom: 5rem;
   }
 
   .slider-group {
@@ -439,4 +450,43 @@ input[type="range"] {
 
 .debug-mode input[type="range"] {
   border: 1px solid green;
+}
+
+/* Mobile scrolling fixes, especially for iOS */
+html,
+body {
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
+
+/* Controls section */
+.controls {
+  background: rgba(0, 0, 0, 0.8);
+  border: none;
+  border-radius: 0;
+  font-size: 0.8rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  flex-shrink: 0;
+  display: none; /* Hidden by default */
+}
+
+.controls a {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  text-align: center;
+  color: white;
+  background: rgba(100, 108, 255, 0.8);
+  border-radius: 4px;
+  text-decoration: none;
+  box-sizing: border-box;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
 }

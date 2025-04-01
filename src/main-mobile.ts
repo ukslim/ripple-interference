@@ -29,94 +29,96 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       </div>
     </div>
     <div class="controls">
-      <div class="global-controls">
-        <div class="slider-group">
-          <div class="slider-label">
-            <span class="label-text">Decay</span>
-            <span class="value-display" id="decay-value">2.6e-4</span>
+      <div class="controls-content">
+        <div class="global-controls">
+          <div class="slider-group">
+            <div class="slider-label">
+              <span class="label-text">Decay</span>
+              <span class="value-display" id="decay-value">2.6e-4</span>
+            </div>
+            <input type="range" 
+                  id="decay" 
+                  min="0" 
+                  max="0.013" 
+                  step="0.000026" 
+                  value="0.00026">
           </div>
-          <input type="range" 
-                 id="decay" 
-                 min="0" 
-                 max="0.013" 
-                 step="0.000026" 
-                 value="0.00026">
-        </div>
-        <div class="slider-group">
-          <div class="slider-label">
-            <span class="label-text">Thresh</span>
-            <span class="value-display" id="threshold-value">0.50</span>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span class="label-text">Thresh</span>
+              <span class="value-display" id="threshold-value">0.50</span>
+            </div>
+            <input type="range" 
+                  id="threshold" 
+                  min="0" 
+                  max="1" 
+                  step="0.01" 
+                  value="0.5">
           </div>
-          <input type="range" 
-                 id="threshold" 
-                 min="0" 
-                 max="1" 
-                 step="0.01" 
-                 value="0.5">
-        </div>
-        <div class="slider-group">
-          <div class="slider-label">
-            <span class="label-text">Hue</span>
-            <span class="value-display" id="hue-value">0.34</span>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span class="label-text">Hue</span>
+              <span class="value-display" id="hue-value">0.34</span>
+            </div>
+            <input type="range" 
+                  id="hue" 
+                  min="0" 
+                  max="6.283" 
+                  step="0.01" 
+                  value="0.340">
           </div>
-          <input type="range" 
-                 id="hue" 
-                 min="0" 
-                 max="6.283" 
-                 step="0.01" 
-                 value="0.340">
         </div>
+        <div class="points-grid">
+          ${pointPositions
+            .map(
+              (pos, i) => `
+            <div class="point-controls" id="point-${pos}">
+              <div class="slider-group">
+                <div class="slider-label">
+                  <span class="label-text">λ (mm)</span>
+                  <span class="value-display" id="wavelength-value-${i}">${baseWavelength.toFixed(
+                1
+              )}</span>
+                </div>
+                <input type="range" 
+                      id="freq-${i}" 
+                      min="${baseWavelength / 5.0}" 
+                      max="${baseWavelength * 10.0}" 
+                      step="0.1" 
+                      value="${baseWavelength}">
+              </div>
+              <div class="slider-group">
+                <div class="slider-label">
+                  <span class="label-text">X</span>
+                  <span class="value-display" id="x-value-${i}">0.00</span>
+                </div>
+                <input type="range" 
+                      id="x-${i}" 
+                      min="-3" 
+                      max="3" 
+                      step="0.01" 
+                      value="0">
+              </div>
+              <div class="slider-group">
+                <div class="slider-label">
+                  <span class="label-text">Y</span>
+                  <span class="value-display" id="y-value-${i}">0.00</span>
+                </div>
+                <input type="range" 
+                      id="y-${i}" 
+                      min="-3" 
+                      max="3" 
+                      step="0.01" 
+                      value="0">
+              </div>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+        <button id="regenerate">Randomize All</button>
+        <a href="/ripple-interference/animate.html">Animated</a>
       </div>
-      <div class="points-grid">
-        ${pointPositions
-          .map(
-            (pos, i) => `
-          <div class="point-controls" id="point-${pos}">
-            <div class="slider-group">
-              <div class="slider-label">
-                <span class="label-text">λ (mm)</span>
-                <span class="value-display" id="wavelength-value-${i}">${baseWavelength.toFixed(
-              1
-            )}</span>
-              </div>
-              <input type="range" 
-                    id="freq-${i}" 
-                    min="${baseWavelength / 5.0}" 
-                    max="${baseWavelength * 10.0}" 
-                    step="0.1" 
-                    value="${baseWavelength}">
-            </div>
-            <div class="slider-group">
-              <div class="slider-label">
-                <span class="label-text">X</span>
-                <span class="value-display" id="x-value-${i}">0.00</span>
-              </div>
-              <input type="range" 
-                    id="x-${i}" 
-                    min="-3" 
-                    max="3" 
-                    step="0.01" 
-                    value="0">
-            </div>
-            <div class="slider-group">
-              <div class="slider-label">
-                <span class="label-text">Y</span>
-                <span class="value-display" id="y-value-${i}">0.00</span>
-              </div>
-              <input type="range" 
-                    id="y-${i}" 
-                    min="-3" 
-                    max="3" 
-                    step="0.01" 
-                    value="0">
-            </div>
-          </div>
-        `
-          )
-          .join("")}
-      </div>
-      <button id="regenerate">Randomize All</button>
-      <a href="/ripple-interference/animate.html">Animated</a>
     </div>
   </div>
 `;
