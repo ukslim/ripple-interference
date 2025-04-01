@@ -21,6 +21,12 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="mobile-layout">
     <div class="canvas-container">
       <canvas id="display"></canvas>
+      <div id="rotate-message">
+        <div id="rotate-icon">
+          <img src="rotate-icon.svg" width="28" height="28" alt="Rotation icon">
+        </div>
+        <div>rotate to edit</div>
+      </div>
     </div>
     <div class="controls">
       <div class="global-controls">
@@ -187,6 +193,24 @@ function handleOrientationChange() {
   const isLandscape = window.matchMedia("(orientation: landscape)").matches;
   document.body.classList.toggle("landscape", isLandscape);
   document.body.classList.toggle("portrait", !isLandscape);
+
+  // Show/hide rotation message based on orientation
+  const rotateMessage =
+    document.querySelector<HTMLDivElement>("#rotate-message");
+  if (rotateMessage) {
+    if (!isLandscape) {
+      rotateMessage.style.display = "flex";
+      // Auto-hide message after 3 seconds
+      setTimeout(() => {
+        rotateMessage.style.opacity = "0";
+        setTimeout(() => {
+          rotateMessage.style.display = "none";
+        }, 1000);
+      }, 3000);
+    } else {
+      rotateMessage.style.display = "none";
+    }
+  }
 
   // For iOS to recalculate scrollable area correctly after orientation change
   if (isLandscape) {
