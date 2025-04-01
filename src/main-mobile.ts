@@ -34,7 +34,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="slider-group">
             <div class="slider-label">
               <span class="label-text">Decay</span>
-              <span class="value-display" id="decay-value">2.6e-4</span>
+              <span class="value-display" id="decay-value">2.60</span>
             </div>
             <input type="range" 
                   id="decay" 
@@ -279,6 +279,11 @@ function updateValueDisplay(slider: {
   // For very small values like decay, use scientific notation
   if (value < 0.01 && value > 0) {
     displayValue = value.toExponential(1);
+  }
+
+  // For decay, multiply by 10000 for display clarity
+  if (slider.display.id.includes("decay-value")) {
+    displayValue = (value * 10000).toFixed(2);
   }
 
   // For wavelength values, use just one decimal place
