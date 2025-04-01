@@ -14,8 +14,8 @@ const CANVAS_HEIGHT = HEIGHT_MM * PIXELS_PER_MM;
 // Default parameters
 const baseWavelength = 41.89; // 2π/0.15, converting from previous baseFrequency
 
-// Point names for labels
-const pointNames = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"];
+// Point positions for 2x2 grid
+const pointPositions = ["TL", "TR", "BL", "BR"];
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="mobile-layout">
@@ -32,8 +32,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <div class="global-controls">
         <div class="slider-group">
           <div class="slider-label">
-            <span>Decay</span>
-            <span class="value-display" id="decay-value">0.00026</span>
+            <span class="label-text">Decay</span>
+            <span class="value-display" id="decay-value">2.6e-4</span>
           </div>
           <input type="range" 
                  id="decay" 
@@ -44,8 +44,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         </div>
         <div class="slider-group">
           <div class="slider-label">
-            <span>Thresh</span>
-            <span class="value-display" id="threshold-value">0.5</span>
+            <span class="label-text">Thresh</span>
+            <span class="value-display" id="threshold-value">0.50</span>
           </div>
           <input type="range" 
                  id="threshold" 
@@ -56,32 +56,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         </div>
         <div class="slider-group">
           <div class="slider-label">
-            <span>Noise F</span>
-            <span class="value-display" id="noiseFreq-value">0.2</span>
-          </div>
-          <input type="range" 
-                 id="noiseFreq" 
-                 min="0.001" 
-                 max="2" 
-                 step="0.001" 
-                 value="0.2">
-        </div>
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Noise A</span>
-            <span class="value-display" id="noiseAmp-value">0.05</span>
-          </div>
-          <input type="range" 
-                 id="noiseAmp" 
-                 min="0" 
-                 max="0.2" 
-                 step="0.001" 
-                 value="0.05">
-        </div>
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Hue</span>
-            <span class="value-display" id="hue-value">0.00</span>
+            <span class="label-text">Hue</span>
+            <span class="value-display" id="hue-value">0.34</span>
           </div>
           <input type="range" 
                  id="hue" 
@@ -91,53 +67,54 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
                  value="0.340">
         </div>
       </div>
-      ${pointNames
-        .map(
-          (name, i) => `
-        <div class="point-controls">
-          <h3>${name}</h3>
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>λ (mm)</span>
-              <span class="value-display" id="wavelength-value-${i}">${baseWavelength.toFixed(
-            1
-          )}</span>
+      <div class="points-grid">
+        ${pointPositions
+          .map(
+            (pos, i) => `
+          <div class="point-controls" id="point-${pos}">
+            <div class="slider-group">
+              <div class="slider-label">
+                <span class="label-text">λ (mm)</span>
+                <span class="value-display" id="wavelength-value-${i}">${baseWavelength.toFixed(
+              1
+            )}</span>
+              </div>
+              <input type="range" 
+                    id="freq-${i}" 
+                    min="${baseWavelength / 5.0}" 
+                    max="${baseWavelength * 10.0}" 
+                    step="0.1" 
+                    value="${baseWavelength}">
             </div>
-            <input type="range" 
-                   id="freq-${i}" 
-                   min="${baseWavelength / 5.0}" 
-                   max="${baseWavelength * 10.0}" 
-                   step="0.1" 
-                   value="${baseWavelength}">
-          </div>
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>X</span>
-              <span class="value-display" id="x-value-${i}">0.00</span>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span class="label-text">X</span>
+                <span class="value-display" id="x-value-${i}">0.00</span>
+              </div>
+              <input type="range" 
+                    id="x-${i}" 
+                    min="-3" 
+                    max="3" 
+                    step="0.01" 
+                    value="0">
             </div>
-            <input type="range" 
-                   id="x-${i}" 
-                   min="-3" 
-                   max="3" 
-                   step="0.01" 
-                   value="0">
-          </div>
-          <div class="slider-group">
-            <div class="slider-label">
-              <span>Y</span>
-              <span class="value-display" id="y-value-${i}">0.00</span>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span class="label-text">Y</span>
+                <span class="value-display" id="y-value-${i}">0.00</span>
+              </div>
+              <input type="range" 
+                    id="y-${i}" 
+                    min="-3" 
+                    max="3" 
+                    step="0.01" 
+                    value="0">
             </div>
-            <input type="range" 
-                   id="y-${i}" 
-                   min="-3" 
-                   max="3" 
-                   step="0.01" 
-                   value="0">
           </div>
-        </div>
-      `
-        )
-        .join("")}
+        `
+          )
+          .join("")}
+      </div>
       <button id="regenerate">Randomize All</button>
       <a href="/ripple-interference/animate.html">Animated</a>
     </div>
@@ -171,14 +148,6 @@ const decaySlider = {
 const thresholdSlider = {
   slider: document.querySelector<HTMLInputElement>("#threshold")!,
   display: document.querySelector<HTMLSpanElement>("#threshold-value")!,
-};
-const noiseFreqSlider = {
-  slider: document.querySelector<HTMLInputElement>("#noiseFreq")!,
-  display: document.querySelector<HTMLSpanElement>("#noiseFreq-value")!,
-};
-const noiseAmpSlider = {
-  slider: document.querySelector<HTMLInputElement>("#noiseAmp")!,
-  display: document.querySelector<HTMLSpanElement>("#noiseAmp-value")!,
 };
 const hueSlider = {
   slider: document.querySelector<HTMLInputElement>("#hue")!,
@@ -273,6 +242,25 @@ let pattern = new InterferencePatternNew(CANVAS_WIDTH, CANVAS_HEIGHT, canvas);
 window.addEventListener("orientationchange", handleOrientationChange);
 window.addEventListener("resize", handleOrientationChange);
 
+// Secret debug mode - triple tap on title area
+let tapCount = 0;
+document.addEventListener("click", (e) => {
+  const target = e.target as HTMLElement;
+  if (
+    target.classList.contains("controls") ||
+    target.parentElement?.classList.contains("controls")
+  ) {
+    tapCount++;
+    if (tapCount >= 3) {
+      document.body.classList.toggle("debug-mode");
+      tapCount = 0;
+    }
+    setTimeout(() => {
+      tapCount = 0;
+    }, 500);
+  }
+});
+
 // Initial orientation setup
 handleOrientationChange();
 
@@ -280,7 +268,23 @@ function updateValueDisplay(slider: {
   slider: HTMLInputElement;
   display: HTMLSpanElement;
 }) {
-  slider.display.textContent = parseFloat(slider.slider.value).toFixed(3);
+  // Format the value based on the magnitude
+  const value = parseFloat(slider.slider.value);
+
+  // Use fewer decimal places for display clarity
+  let displayValue = value.toFixed(2);
+
+  // For very small values like decay, use scientific notation
+  if (value < 0.01 && value > 0) {
+    displayValue = value.toExponential(1);
+  }
+
+  // For wavelength values, use just one decimal place
+  if (slider.display.id.includes("wavelength-value")) {
+    displayValue = value.toFixed(1);
+  }
+
+  slider.display.textContent = displayValue;
 }
 
 // Base positions calculation function
@@ -320,14 +324,14 @@ function displayPattern() {
     };
   });
 
-  // Call generate directly with absolute positions
+  // Call generate directly with absolute positions and set noise amplitude to 0
   pattern.generate(
     absoluteParams as [any, any, any, any],
     parseFloat(decaySlider.slider.value),
     parseFloat(thresholdSlider.slider.value),
     0,
-    parseFloat(noiseFreqSlider.slider.value),
-    parseFloat(noiseAmpSlider.slider.value),
+    0.2, // Fixed noise frequency value
+    0, // Set noise amplitude permanently to 0
     parseFloat(hueSlider.slider.value)
   );
 }
@@ -342,13 +346,7 @@ sliders.forEach((slider) => {
   });
 });
 
-[
-  decaySlider,
-  thresholdSlider,
-  noiseFreqSlider,
-  noiseAmpSlider,
-  hueSlider,
-].forEach((slider) => {
+[decaySlider, thresholdSlider, hueSlider].forEach((slider) => {
   slider.slider.addEventListener("input", () => {
     updateValueDisplay(slider);
     displayPattern();
