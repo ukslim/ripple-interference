@@ -2,7 +2,12 @@ import { InterferencePatternNew } from "./image";
 import "./style.css";
 
 // Default parameters
-const baseWavelength = 100; // 2π/0.15, converting from previous baseFrequency
+const referenceScreenSize = Math.min(2560, 1440); // Reference size for 27-inch desktop
+function getScaledWavelength() {
+  const currentMinDimension = Math.min(window.innerWidth, window.innerHeight);
+  const scalingFactor = currentMinDimension / referenceScreenSize;
+  return 100 * scalingFactor; // Base wavelength of 100 scaled to current screen
+}
 
 // Animation parameters
 const animationSpeeds = {
@@ -23,13 +28,15 @@ const phaseOffsets = {
 };
 
 // Parameter ranges
-const ranges = {
-  wavelength: { min: baseWavelength / 1.5, max: baseWavelength * 3.0 },
-  xOffset: { min: -1, max: 3 }, // Wider range for more noticeable orbits
-  yOffset: { min: -1, max: 3 }, // Wider range for more noticeable orbits
-  decay: { min: 0.0001, max: 0.0005 },
-  hue: { min: 0, max: 2 * Math.PI }, // Full hue range
-};
+function getWavelengthRanges(baseWavelength: number) {
+  return {
+    wavelength: { min: baseWavelength / 1.5, max: baseWavelength * 3.0 },
+    xOffset: { min: -1, max: 3 }, // Wider range for more noticeable orbits
+    yOffset: { min: -1, max: 3 }, // Wider range for more noticeable orbits
+    decay: { min: 0.0001, max: 0.0005 },
+    hue: { min: 0, max: 2 * Math.PI }, // Full hue range
+  };
+}
 
 // Fixed threshold value (middle of original range)
 const fixedThreshold = 0.35;
@@ -51,6 +58,9 @@ function calculateBasePositions(width: number, height: number) {
 }
 
 function getAnimatedParams(maxDistance: number) {
+  const baseWavelength = getScaledWavelength();
+  const ranges = getWavelengthRanges(baseWavelength);
+
   return Array(4)
     .fill(null)
     .map((_, i) => {
@@ -172,6 +182,9 @@ window.addEventListener("resize", () => {
 });
 
 function animate() {
+  const baseWavelength = getScaledWavelength();
+  const ranges = getWavelengthRanges(baseWavelength);
+
   const decay =
     ranges.decay.min +
     ((Math.sin(time * animationSpeeds.decay + phaseOffsets.decay) + 1) / 2) *
